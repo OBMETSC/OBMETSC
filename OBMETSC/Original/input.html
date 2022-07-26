@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+  <br>
+        <h2>Input for Calculation</h2>
+  <hr>
+  <br>
+  <form action = "/output" method = "post" class="row g-3">
+        <h4>Basic Informations</h4>
+    <br>
+
+    <div class="col-md-4">
+      <label for="ptx_technology" class="form-label">Sector Coupling Technology:</label>
+      <select id="ptx_technology" class="form-select" name="ptx_technology" size="1">
+          <option value="Power-to-X">Power-to-X</option>
+          <option value="X-to-Power">X-to-Power</option>
+        </select>
+    </div>
+
+   <div class="col-md-4">
+      <label for="power_technology" class="form-label">Installed Power for Technology (in MW):</label>
+      <input type="number" class="form-control" name = "power_technology" min="0" placeholder="e.g. 20" id="power_technology" required>
+   <p style="padding-bottom: 30px; width: 900px;">
+   </div>
+
+          <label class="form-label">For the production of PtX energy carriers, variable costs for raw materials are incurred
+          in some cases (such as water for hydrogen or CO2 for methane, etc.). In the calculations of an XtP business
+          model, a "0" can be set here.</label>
+
+    <div class="col-md-4">
+      <label for="capex_technology" class="form-label">CapEx of the Ptx/XtP-Technology (EUR/kW):</label>
+      <input type="number" class="form-control" name = "capex_technology" min="0" placeholder="e.g. 1600" id="capex_technology" required>
+    </div>
+
+    <div class="col-md-4">
+      <label for="opex_technology" class="form-label">OpEx of the Ptx/XtP-Technology (% of CapEx):</label>
+      <input type="number" class="form-control" name = "opex_technology" min="0" placeholder="e.g. 4" id="opex_technology" required>
+    </div>
+
+    <div class="col-md-4">
+      <label for="variable_cost" class="form-label">Variable Costs for Production (EUR/MWh):</label>
+      <input type="number" class="form-control" name = "variable_cost" min="0" placeholder="e.g. 10" id="variable_cost" required>
+    <p style="padding-bottom: 30px; width: 900px;">
+    </div>
+
+      <label class="form-label">Thermal efficiency only applies to some technologies where commercial use of waste heat is
+      possible (e.g.: Fuelcell, CCGT). Otherwise fill in here with "0".</label>
+
+    <div class="col-md-5">
+      <label for="efficiency_ele" class="form-label">Electrical Overall-Efficiency of the system (in %):</label>
+      <input type="number" class="form-control" name = "efficiency_ele" min="0" placeholder="e.g. 70" id="efficiency_ele" required>
+    </div>
+
+    <div class="col-md-5">
+      <label for="efficiency_th" class="form-label">Thermal Overall-Efficiency of the system (in %):</label>
+      <input type="number" class="form-control" name = "efficiency_th" min="0" placeholder="e.g. 0" id="efficiency_th" required>
+        <p style="padding-bottom: 30px; width: 900px;">
+    </div>
+
+    <hr>
+        <h4>Power Production</h4>
+    <br>
+
+    <div class="col-md-5">
+      <label for="input_technology" class="form-label">Power Input Technology:</label>
+      <select id="input_technology" class="form-select" name="input_technology" size="1">
+        <option selected>PV</option>
+        <option value="Wind">Wind</option>
+        <option value="PV+Grid">PV+Grid</option>
+        <option value="Wind+Grid">Wind+Grid</option>
+        <option value="Wind+PV">Wind+PV</option>
+        <option value="Grid">Grid</option>
+        </select>
+    </div>
+
+    <div class="col-md-5">
+      <label for="power_input" class="form-label">Installed Power for Power Input Technology (in MW):</label>
+      <input type="number" class="form-control" name = "power_input" min="0" placeholder="e.g. 20" id="power_input" required>
+    </div>
+
+    <label class="form-label">Enter "0" for CapEx and Opex for pure grid procurement. For the combination of PV and wind,
+        enter an average value or weighted depending on the design.</label>
+
+    <div class="col-md-4">
+      <label for="capex_input" class="form-label">CapEx of Power Generation Technology (EUR/kW):</label>
+      <input type="number" class="form-control" name = "capex_input" min="0" placeholder="e.g. 650" id="capex_input" required>
+    </div>
+
+    <div class="col-md-4">
+      <label for="opex_input" class="form-label">OpEx of Power Generation Technology (% of CapEx):</label>
+      <input type="number" class="form-control" name = "opex_input" min="0" placeholder="e.g. 2" id="opex_input" required>
+    </div>
+
+    <div class="col-8">
+      <label for="location" class="form-label">Plant Location:</label>
+      <select id="location" class="form-select" name="location" size="1">
+        <option selected>Brandenburg</option>
+        <option value="Berlin">Berlin</option>
+        <option value="Hamburg">Hamburg</option>
+        <option value="Saarland">Saarland</option>
+        <option value="Mecklenburg Vorpommern">Mecklenburg Vorpommern</option>
+        <option value="Niedersachsen">Niedersachsen</option>
+        <option value="Nordrhein Westphalen">Nordrhein Westphalen</option>
+        <option value="Bayern">Bayern</option>
+        <option value="Baden Württemberg">Baden Württemberg</option>
+        <option value="Rheinland Pfalz">Rheinland Pfalz</option>
+        <option value="Hessen">Hessen</option>
+        <option value="Thüringen">Thüringen</option>
+        <option value="Sachsen">Sachsen</option>
+        <option value="Schleswig Holstein">Schleswig Holstein</option>
+        <option value="Sachsen Anhalt">Sachsen Anhalt</option>
+        <option value="Bremen">Bremen</option>
+        </select>
+    </div>
+
+      <hr>
+        <h4>Commercial Parameters</h4>
+      <br>
+
+    <div class="col-md-4">
+      <label for="power_cost" class="form-label">Power Costs in EUR/MWh (0 for Default):</label>
+      <input type="number" class="form-control" name = "power_cost" min="0" placeholder="e.g. 0" id="power_cost" required>
+    </div>
+
+    <div class="col-md-4">
+      <label for="heat_cost" class="form-label">Heat Costs in EUR/MWh (0 for Default):</label>
+      <input type="number" class="form-control" name = "heat_cost" min="0" placeholder="e.g. 0" id="heat_cost" required>
+    </div>
+
+    <div class="col-md-4">
+      <label for="product_price" class="form-label">Energy carrier price (EUR/MWh): </label>
+      <input type="number" class="form-control" name = "product_price" min="0" placeholder="e.g. 80" id="product_price" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="wacc_input" class="form-label">Weighted Average Cost of Capital (WACC) in %:</label>
+      <input type="number" class="form-control" name = "wacc_input" min="0" max="100" placeholder="e.g. 7" id="wacc_input" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="runtime" class="form-label">Runtime (in years):</label>
+      <input type="number" class="form-control" name = "runtime" min="1" max="100" placeholder="e.g. 25" id="runtime" required>
+    </div>
+
+    <div class="col-9">
+      <label for="power_price_change" class="form-label">Changes of Power Costs in % (only necessary, if Default-Power-Cost should be changed):</label>
+      <input type="number" class="form-control" name = "power_price_change" min="0" max="500" value="0" id="power_price_change" required>
+    </div>
+
+    <div class="col-9">
+      <label for="margincost_model" class="form-label">Cost-managed Operation:</label>
+      <select id="margincost_model" class="form-select" name="margincost_model" size="1">
+        <option selected>yes</option>
+        <option value="no">no</option>
+        </select>
+    </div>
+
+
+    <hr>
+        <h4>Infrastructure Dimensioning</h4>
+    <br>
+    <label> For Hydrogen as energy carrier it is possible to calculate the costs of an additional infrastructure </label><br>
+
+    <div class="col-9">
+      <label for="do_infrastructure" class="form-label">Should costs for additional transport infrastructure be calculated ?</label>
+      <select id="do_infrastructure" class="form-select" name="do_infrastructure" size="1">
+        <option selected>no</option>
+        <option value="yes">yes</option>
+        </select>
+    </div>
+
+    <div class="col-9">
+      <label for="infrastructure_type" class="form-label">Infrastructure Type:</label>
+      <select id="infrastructure_type" class="form-select" name="infrastructure_type" size="1">
+        <option selected>--</option>
+        <option value="LNG">Liquid Gas Trailer</option>
+        <option value="Tubetrailer">Gaseous Tubetrailer</option>
+        <option value="Pipeline">Pipeline</option>
+        </select>
+    </div>
+
+    <div class="col-md-6">
+      <label for="distance" class="form-label">Distance (in km):</label>
+      <input type="number" class="form-control" name = "distance" min="0" max="500" value="0" id="distance" required>
+    </div>
+
+    <hr>
+        <h4>Adjustment of Regulations</h4>
+    <br>
+    <div class="col-md-10">
+      <label> The applicable regulatory costs and subsidies in Germany (as of June 2021) are applied to calculate the
+        business case of the desired technology. If desired, the impact of regulatory adjustments can be calculated.<br>
+        <br>
+        The following default values for regulatory costs and subsidies exist:<br>
+        <ul>
+          <li>EEG: 15% of the full Renewable Energy Law (EEG)</li>
+          <li>Power Tax: 10% of the full power taxes in Germany</li>
+          <li>KWKG: 0% of the full Combined Heat and Power Law (KWKG)</li>
+          <li>CAPEX-subsidy: 0% of total CAPEX</li>
+          <li>OPEX-subsidy: 0% of total OPEX (Maintenance and Operations)</li>
+        </ul>
+      </label><br>
+    </div>
+
+    <div class="col-md-6">
+      <label for="EEG_reduction" class="form-label">Part of EEG-tax (in %):</label>
+      <input type="number" class="form-control" name = "EEG_reduction" min="0" max="100" value="15" id="EEG_reduction" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="stromsteuer_reduction" class="form-label">Part of power tax (in %):</label>
+      <input type="number" class="form-control" name = "stromsteuer_reduction" min="0" max="100" value="10" id="stromsteuer_reduction" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="KWKG_reduction" class="form-label">Part of KWKG-tax (in %):</label>
+      <input type="number" class="form-control" name = "KWKG_reduction" min="0" max="100" value="0" id="KWKG_reduction" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="netzentgelte_reduction" class="form-label">Part of grid charges (in %):</label>
+      <input type="number" class="form-control" name = "netzentgelte_reduction" min="0" max="100" value="0" id="netzentgelte_reduction" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="capex_subvention" class="form-label">Subsidy for CAPEX (in %):</label>
+      <input type="number" class="form-control" name = "capex_subvention" min="0" max="100" value="0" id="capex_subvention" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="opex_subvention" class="form-label">Subsidy for OPEX (in %):</label>
+      <input type="number" class="form-control" name = "opex_subvention" min="0" max="100" value="0" id="opex_subvention" required>
+    </div>
+
+
+
+
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary">Calculate</button>
+    </div>
+    <br>
+    <br>
+  </form>
+</div>
+<p style="padding-bottom: 30px; width: 300px;">
+
+{% endblock %}

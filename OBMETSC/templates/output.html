@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <br>
+        <h2>Calculation Results</h2>
+    <hr>
+    <br>
+    <h4>Economic Evaluation of the Power-to-X Technology Plant:</h4><br>
+    <label class="form-label">Expected expenses over the duration of {{runtime}} years</label>
+    <table class = "table">
+        <thead>
+          <tr>
+            {% for col in column_names1 %}
+            <th scope="col">{{col}}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in row_data1 %}
+          <tr>
+            {% for col, row_ in zip(column_names1, row) %}
+            <td>{{ '{0:,}'.format(row_ | int) }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+    <p class="fw-bold">The Net Present Value is: {{'{0:,}'.format(npv_ptx | int)}} EUR </p>
+    <p style="padding-bottom: 30px; width: 300px;">
+    <hr>
+    <h4>Production Profiles of the Plant:</h4><br>
+
+    <div class="content">
+    {% if renewables %}
+    <label class="form-label">Production Profile for Renewable Power Production:</label><br>
+    <img src='/static/power_production_plot.png'/>
+    {% endif %}
+    </div>
+    <p style="padding-bottom: 30px; width: 300px;">
+
+    <div class="content">
+    {% if infrastructure %}
+    <hr>
+    <h4>Infrastructure Expenses:</h4><br>
+    <label class="form-label">Expected expenses on infrastructure over the duration of {{runtime}} years</label>
+    <table class = "table">
+            <thead>
+              <tr>
+                {% for col in column_names2 %}
+                <th scope="col">{{col}}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in row_data2 %}
+              <tr>
+                {% for col, row_ in zip(column_names2, row) %}
+                <td>{{ '{0:,}'.format(row_ | int) }}</td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+    </table>
+    <p class="fw-bold">The Net Present Value is: {{'{0:,}'.format(npv_infrastructure | int)}} EUR</p>
+    {% endif %}
+    </div>
+
+
+</div>
+<p style="padding-bottom: 30px; width: 300px;">
+
+{% endblock %}
