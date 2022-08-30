@@ -51,6 +51,7 @@ The following people have contributed in the following manner to `OBMETSC`:
 | ---- | ---- | ---- |
 | Johannes Giehl | major development & conceptualization, core functionality, architecture, publishing process | coordinator, maintainer, developer & corresponding author |
 | Arian Hohgräve | major development & conceptualization, core functionality, architecture | coordinator & developer |
+| Melina Lohmann | further development, core functionality | developer |
 | Joachim Müller-Kirchenbauer | support & early-stage conceptualization, funding | supporter (university professor) |
 
 ## Citing
