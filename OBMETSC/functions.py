@@ -77,10 +77,10 @@ def dcf_power_production(input_technology, power_input, capex_power, opex_power,
 
     profit = (output_pp['pv_production'] + output_pp['wind_production']) * power_cost['price']
 
-    list1 = list(range(1, runtime + 1))
+    list1 = list(range(0, runtime + 1))
 
     list2 = list1.copy()
-    list2[0] = opex_plant + capex_plant
+    list2[0] =  capex_plant
     list2[1:-1] = [opex_plant for i in list2[1:-1]]
     list2[-1] = opex_plant
 
@@ -162,6 +162,7 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
             x_production = pd.DataFrame(
                 {"time": list1, "production": x_production3['production'], "renewable_demand": list2,
                  "grid_demand": grid_demand, "power_production": list2})
+            print(x_production)
         elif margincost_model == "no":
             list3 = list1.copy()
             list3[0:8760] = [(power_technology * efficiency) for i in list3[0:8760]]
@@ -249,44 +250,50 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     if output_ptx["renewable_demand"].sum() > 0:
         power_production_cost = (-1) * dcf_power['expenditure']
     else:
-        list1 = list(range(1, runtime + 1))
+        list1 = list(range(0, runtime + 1))
         power_production_cost = list1.copy()
         power_production_cost = [int(0) for i in power_production_cost]
 
-    list1 = list(range(1, runtime + 1))
+    list1 = list(range(0, runtime + 1))
     regulations_cost = list1.copy()
     regulations_cost = [(variable_regulations_cost_1 + variable_regulations_cost_2) for i in regulations_cost]
+    regulations_cost[0] = 0
 
     revenue = product_price * output_ptx['production']
     revenue_power = output_ptx['power_production'] * power_cost['price']
 
-    list3 = list(range(1, runtime + 1))
+    list3 = list(range(0, runtime + 1))
 
     list4 = list3.copy()
-    list4[0] = (-1) * (opex_plant + capex_plant + x_production_cost.sum())
-    list4[1:-1] = [((-1) * (opex_plant + x_production_cost.sum())) for i in list4[1:-1]]
-    list4[-1] = (-1) * (opex_plant + x_production_cost.sum())
+    list4 = [((-1) * (opex_plant)) for i in list4]
+    list4[0] = (-1) * (capex_plant)
 
     list5 = list3.copy()
     list5 = [revenue.sum() for i in list5]
+    list5[0] = 0
 
     list6 = list3.copy()
     list6 = [revenue_power.sum() for i in list6]
+    list6[0] = 0
 
+    list7 = list3.copy()
+    list7 = [(-1) * (x_production_cost.sum()) for i in list7]
+    list7[0] = 0
 
     power_to_x_dcf = pd.DataFrame(
         {"year": list3, "expenditure_technology": list4, "expenditure_power_production": power_production_cost,
+         "expenditure_power_grid": list7,
          "expenditure_regulations": regulations_cost, "revenue_technology": list5, "revenue_power": list6})
 
     power_to_x_dcf['profit'] = power_to_x_dcf['expenditure_technology'] + power_to_x_dcf['expenditure_power_production']\
-                               + power_to_x_dcf['revenue_technology'] + power_to_x_dcf['revenue_power'] \
+                               + power_to_x_dcf["expenditure_power_grid"] + power_to_x_dcf['revenue_technology'] + power_to_x_dcf['revenue_power'] \
                                + power_to_x_dcf["expenditure_regulations"]
 
     x = 0
-    list3 = list(range(0,runtime))
+    list3 = list(range(0,runtime+1))
     npv_calc = list3
     ptx_profit = power_to_x_dcf['profit']
-    while x < int(runtime):
+    while x < int(runtime+1):
         npv_calc[x] = ptx_profit[x] / (1 + wacc) ** int(x)
         x += 1
 
@@ -314,9 +321,9 @@ def output_x_to_power(power_cost, power_technology, product_price, efficiency_el
     if margincost_model == "yes":
         comparison_margincost1 = np.where(marginrevenue['price'] > margincost, 1, 0)
         comparison_margincost = pd.DataFrame({'production': comparison_margincost1})
-        power_production1 = comparison_margincost['production'] * power_technology * efficiency_el
+        power_production1 = comparison_margincost['production'] * power_technology #* efficiency_el
         heat_production1 = comparison_margincost['production'] * power_technology * efficiency_q
-        input_product_demand = comparison_margincost['production'] * power_technology
+        input_product_demand = comparison_margincost['production'] * power_technology / efficiency_el
         x_production = pd.DataFrame({"time": list1, "power_production": power_production1, "heat_production": heat_production1,
                                      "input_product_demand": input_product_demand})
     elif margincost_model == "no":
@@ -371,21 +378,24 @@ def dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime,
     power_revenue = output_xtp['power_production'] * power_cost2['price']
     heat_revenue = output_xtp['heat_production'] * heat_cost2['price']
 
-    list3 = list(range(1, runtime + 1))
+    list3 = list(range(0, runtime + 1))
 
     list4 = list3.copy()
-    list4[0] = (-1) * (opex_plant + capex_plant)
+    list4[0] = (-1) * (0 + capex_plant)
     list4[1:-1] = [((-1) * opex_plant) for i in list4[1:-1]]
     list4[-1] = ((-1) * opex_plant)
 
     list5 = list3.copy()
     list5 = [((-1) * x_production_cost.sum()) for i in list5]
+    list5[0] = 0
 
     list6 = list3.copy()
     list6 = [heat_revenue.sum() for i in list6]
+    list6[0] = 0
 
     list7 = list3.copy()
     list7 = [power_revenue.sum() for i in list7]
+    list7[0] = 0
 
     xtp_dcf = pd.DataFrame({"year": list3, "expenditure": list4, "feedstock_cost": list5, "revenue_heat": list6, "revenue_power": list7})
     xtp_dcf['profit'] = xtp_dcf['expenditure'] + xtp_dcf['feedstock_cost'] + xtp_dcf['revenue_heat'] + xtp_dcf['revenue_power']
@@ -393,7 +403,7 @@ def dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime,
     x = 0
     npv_calc = list3
     xtp_profit = xtp_dcf['profit']
-    while x < int(runtime):
+    while x < int(runtime+1):
         npv_calc[x] = xtp_profit[x] / ((1 + wacc)**int(x))
         x += 1
     npv = sum(npv_calc)
@@ -517,20 +527,20 @@ def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_tech
         capex_compressor = 0
         opex_compressor = 0
 
-    list3 = list(range(1, runtime + 1))
+    list3 = list(range(0, runtime + 1))
 
     list4 = list3.copy()
-    list4[0] = (-1) * (opex_transport + capex_transport)
+    list4[0] = (-1) * (capex_transport)
     list4[1:-1] = [((-1) * (opex_transport)) for i in list4[1:-1]]
     list4[-1] = (-1) * (opex_transport)
 
     list5 = list3.copy()
-    list5[0] = (-1) * (opex_compressor + capex_compressor + opex_liqu + capex_liqu)
+    list5[0] = (-1) * (capex_compressor + capex_liqu)
     list5[1:-1] = [((-1) * (opex_compressor + opex_liqu)) for i in list5[1:-1]]
     list5[-1] = (-1) * (opex_compressor + opex_liqu)
 
     list6 = list3.copy()
-    list6[0] = (-1) * (opex_storage + capex_storage)
+    list6[0] = (-1) * (capex_storage)
     list6[1:-1] = [((-1) * (opex_storage)) for i in list6[1:-1]]
     list6[-1] = (-1) * (opex_storage)
 
@@ -542,9 +552,51 @@ def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_tech
     x = 0
     npv_calc = list3
     infr_profit = infrastructure_dcf['expenditure_total']
-    while x < int(runtime):
+    while x < int(runtime+1):
         npv_calc[x] = infr_profit[x] / ((1 + wacc)**int(x))
         x += 1
     npv = sum(npv_calc)
 
     return (infrastructure_dcf, npv)
+
+'''def sensitivity_power_to_X(dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                   variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
+                   efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease,
+                   share_input_wind, share_input_pv))
+    sensitivity_df = pd.DataFrame() 
+    input_parameters_dict=["capex_technology": capex_technology, 'variable_cost': variable_cost,
+                            'product_price': product_price, 'capex_power': capex_power,
+                            'opex_power': opex_power, 'wacc' : wacc, 'EEG_expenditure': EEG_expenditure,
+                            'regulations_grid_expenditure': regulations_grid_expenditure,
+                            ]
+    #create a loop to manipulate the input values
+    for key in input_parameters_dict 
+        #should go through a dict with all input parameters
+        #e.g. EEG, KWKG, tax, OPEX, Power price, Investment cost etc
+    variation_value = input_parameters_dict[key]
+    Parameter_name = key
+    sensitivity_array = [] 
+    i=0
+        for i < 2.01 #create percentage change of the input parameters
+        #necessary to set the new value for the correct parameter
+        Parameter_name = variation_value * i
+        #calculate NPV neu
+        NPV = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
+                           power_cost, variable_cost, product_price, input_technology, power_input, capex_power,
+                           opex_power, efficiency, margincost_model, location, wacc, price_change,
+                           regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                           share_input_wind, share_input_pv)
+        #write values into array
+        sensitivity_array = sensitivity_array.append[NPV]
+        i = i+0.1
+        return sensitivity_array
+    #write value into DataFrame
+    sensitivity_df[inputs] = sensitivity_array
+    return sensitivity_df
+    
+    e.g.
+                   Parameter a  ...  Parameter a 
+    change 0.0     vale t 0.0         value a 1.9
+    ...
+    change 2.0      etc.'''
