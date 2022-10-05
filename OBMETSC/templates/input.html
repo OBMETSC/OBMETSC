@@ -30,7 +30,7 @@ SPDX-License-Identifier: MIT
     </div>
 
    <div class="col-md-4">
-      <label for="power_technology" class="form-label">Installed Capacity (MW):</label>
+      <label for="power_technology" class="form-label">Installed Capacity (MWel):</label>
       <input type="number" step="0.01" class="form-control" name = "power_technology" min="0"
              placeholder="e.g. 20" id="power_technology" required>
    <p style="padding-bottom: 30px; width: 900px;">
@@ -94,7 +94,7 @@ SPDX-License-Identifier: MIT
     </div>
 
     <div class="col-md-5">
-      <label for="power_input" class="form-label">Installed Capacity (MW):</label>
+      <label for="power_input" class="form-label">Installed Capacity (MWel):</label>
       <input type="number" step="0.01" class="form-control" name = "power_input" min="0"
              placeholder="e.g. 20" id="power_input" required>
     </div>
@@ -190,7 +190,7 @@ SPDX-License-Identifier: MIT
     </div>
 
     <div class="col-9">
-      <label for="power_price_change" class="form-label">Changes of Power Cost over lifetime (in %):</label>
+      <label for="power_price_change" class="form-label">Adjustment of Power Cost Time Series (in %):</label>
       <input type="number" step="0.01" class="form-control" name = "power_price_change" min="-500" max="500"
              placeholder="0, if Default-Power-Cost should not be changed" value="0" id="power_price_change" required>
     </div>
