@@ -3,6 +3,7 @@ Tool for economical evaluation of sector coupling business models
 Databank File: Imports the necessary data-rows as csv.-file
 
 SPDX-FileCopyrightText: Arian Hohgraeve <a.e.hohgraeve@web.de>
+                        Johannes Giehl
 
 SPDX-License-Identifier: MIT
 
@@ -14,7 +15,11 @@ import pandas as pd
 
 
 #import the cost data for power supply and heat supply
-electricity_cost_data = pd.read_csv("databank/Strom_Kosten_2021_fitted.csv")# change year and type for other series
+def get_price_series(power_price_series):
+    electricity_cost_data = pd.read_csv(
+        "databank/Strom_Kosten_" + power_price_series + ".csv")  # change year and type for other series
+    return electricity_cost_data
+
 heat_cost_data = pd.read_csv("databank/Heat_Kosten_2020.csv")
 
 #various .csv-data for the production capacity per kW for power production (PV, Wind) for various German states
