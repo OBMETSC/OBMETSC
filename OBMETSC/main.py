@@ -86,6 +86,7 @@ def get():
     capex_input = float(request.form['capex_input'])
     opex_input = float(request.form['opex_input'])
     power_cost = float(request.form['power_cost'])
+    power_price_series = str(request.form['pp_series'])
     heat_cost = float(request.form['heat_cost'])
     margincost_model = str(request.form['margincost_model'])
     input_technology = str(request.form['input_technology'])
@@ -182,20 +183,22 @@ def get():
             a = output_power_production(input_technology, power_input, location,
                                         share_input_wind, share_input_pv)
             b = dcf_power_production(input_technology, power_input, capex_power, opex_power,
-                                     runtime, location, power_cost, wacc, price_change,
+                                     runtime, location, power_cost, power_price_series, wacc, price_change,
                                      share_input_wind, share_input_pv)
 
     #the output and DCF for a PtX Technology are calculated (for details: functions.py)
         c = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
-                              variable_cost, location, power_input, price_change,
+                              variable_cost, location, power_input, power_price_series, price_change,
                               share_input_wind, share_input_pv)
         d = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
-                           power_cost, variable_cost, product_price, input_technology, power_input, capex_power,
+                           power_cost, power_price_series, variable_cost, product_price,
+                           input_technology, power_input, capex_power,
                            opex_power, efficiency, margincost_model, location, wacc, price_change,
                            regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
                            share_input_wind, share_input_pv)
         '''sensitivity_PTX = sensitivity_power_to_X(dcf_power_to_x(power_technology, capex_technology, opex_technology,
-                                                                runtime, power_cost,variable_cost, product_price,
+                                                                runtime, power_cost, power_price_series,
+                                                                variable_cost, product_price,
                                                                 input_technology, power_input, capex_power, opex_power,
                                                                 efficiency, margincost_model, location, wacc,
                                                                 price_change, regulations_grid_expenditure,
@@ -204,10 +207,12 @@ def get():
 
     #the output and DCF for a XtP Technology are calculated (for details: functions.py)
     elif ptx_technology == "X-to-Power":
-        e = output_x_to_power(power_cost, power_technology, product_price, efficiency_el, efficiency_q,
+        e = output_x_to_power(power_cost, power_price_series, power_technology,
+                              product_price, efficiency_el, efficiency_q,
                               margincost_model, variable_cost, price_change)
         d = dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime,
-                           product_price, variable_cost, power_cost, heat_cost, efficiency_el, efficiency_q,
+                           product_price, variable_cost, power_cost, power_price_series, heat_cost,
+                           efficiency_el, efficiency_q,
                            margincost_model, wacc, price_change, capex_decrease, opex_decrease)
 
     # If additional infrastructure for gaseous energy carriers is to be built, the dimensioning and costs are issued here
@@ -221,13 +226,16 @@ def get():
     if do_infrastructure == "yes":
         infrastructure = True
         g = infrastructure_dimension(ptx_technology, infrastructure_type, distance, power_technology,
-                                     input_technology, efficiency, product_price, margincost_model, variable_cost, location,
-                                     power_input, power_cost, efficiency_el, efficiency_q, price_change, transport_pressure,
+                                     input_technology, efficiency, product_price, margincost_model,
+                                     variable_cost, location,
+                                     power_input, power_cost, power_price_series,
+                                     efficiency_el, efficiency_q, price_change, transport_pressure,
                                      capacity, share_input_wind, share_input_pv)
 
         h = infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_technology,
                                input_technology, efficiency, product_price, margincost_model, variable_cost, location,
-                               power_input, power_cost, efficiency_el, efficiency_q, runtime, wacc, price_change,
+                               power_input, power_cost, power_price_series,
+                               efficiency_el, efficiency_q, runtime, wacc, price_change,
                                capex_compressor_1, capex_compressor_2, opex_compressor_rate,
                                capex_pipe_1, capex_pipe_2, capex_pipe_3, opex_pipe_rate, capex_trailer,
                                capex_storagetank, transport_pressure, capacity, opex_trailer, capex_liquifier,
@@ -242,8 +250,10 @@ def get():
         plt.savefig('static/power_production_plot.png')
 
 
-    return render_template('output.html', runtime=runtime, npv_ptx=d[1], column_names1 = d[0].columns.values, row_data1 = list(d[0].values.tolist()),
-                           renewables=renewables, ptx_technology=ptx_technology, column_names2 = h[0].columns.values, row_data2 = list(h[0].values.tolist()),
+    return render_template('output.html', runtime=runtime, npv_ptx=d[1], column_names1 = d[0].columns.values,
+                           row_data1 = list(d[0].values.tolist()),
+                           renewables=renewables, ptx_technology=ptx_technology, column_names2 = h[0].columns.values,
+                           row_data2 = list(h[0].values.tolist()),
                            infrastructure=infrastructure, npv_infrastructure=h[1], zip = zip)
 
 if __name__ == "__main__":
