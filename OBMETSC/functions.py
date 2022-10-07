@@ -56,7 +56,7 @@ def output_power_production(input_technology, power_input, location, share_input
 
 # Function calculates the profitability (NPV and cash flows over runtime) for the designed RE plant
 def dcf_power_production(input_technology, power_input, capex_power, opex_power,
-                         runtime, location, power_cost, wacc, price_change,
+                         runtime, location, power_cost, power_price_series, wacc, price_change,
                          share_input_wind, share_input_pv):
     list1 = list(range(0, 8760))
     list1[0:8760] = [int(0) for i in list1[0:8760]]
@@ -68,7 +68,7 @@ def dcf_power_production(input_technology, power_input, capex_power, opex_power,
 
 
     if math.isclose(power_cost, 0.0):#power_cost == 0:
-        power_cost1 = pd.DataFrame(electricity_cost_data, columns=['price'])
+        power_cost1 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         power_cost = power_cost1 * price_change
     else:
         list2 = list1.copy()
@@ -104,12 +104,13 @@ def dcf_power_production(input_technology, power_input, capex_power, opex_power,
 
 # Function calculates the production profile for a Power-to-X plant
 def output_power_to_x(power_technology, input_technology, efficiency, product_price,
-                      margincost_model, variable_cost, location, power_input, price_change,
+                      margincost_model, variable_cost, location, power_input,
+                      power_price_series, price_change,
                       share_input_wind, share_input_pv):
     list1 = list(range(0, 8760))
     list2 = list1.copy()
     list2[0:8760] = [int(0) for i in list2[0:8760]]
-    margincost1 = pd.DataFrame(electricity_cost_data, columns=['price'])
+    margincost1 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
     margincost = (margincost1 * price_change) / efficiency + variable_cost
 
     if input_technology != "Grid":
@@ -207,7 +208,7 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
 
 
 # Function calculates the profitability (NPV and cash flows over runtime) for the designed Power-to-X plant
-def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
                    variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
                    efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
                    EEG_expenditure, capex_decrease, opex_decrease,
@@ -215,10 +216,11 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
 
     if input_technology != "Grid":
         dcf_power = dcf_power_production(input_technology, power_input, capex_power, opex_power, runtime,
-                                location, power_cost, wacc, price_change, share_input_wind, share_input_pv)[0]
+                                         location, power_cost, power_price_series,
+                                         wacc, price_change, share_input_wind, share_input_pv)[0]
 
     output_ptx = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
-                      variable_cost, location, power_input, price_change,
+                      variable_cost, location, power_input, power_price_series, price_change,
                       share_input_wind, share_input_pv)
 
     list1 = list(range(0, 8760))
@@ -231,7 +233,7 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     list2[0:8760] = [int(power_cost) for i in list2[0:8760]]
 
     if math.isclose(power_cost, 0.0):#power_cost is int(0):
-        power_cost1 = pd.DataFrame(electricity_cost_data, columns=['price'])
+        power_cost1 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         power_cost = power_cost1 * price_change
     else:
         list2 = list1.copy()
@@ -304,12 +306,13 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
 
 
 #Function calculates the production profile for a X-to-Power plant
-def output_x_to_power(power_cost, power_technology, product_price, efficiency_el, efficiency_q, margincost_model,
+def output_x_to_power(power_cost, power_price_series, power_technology,
+                      product_price, efficiency_el, efficiency_q, margincost_model,
                       variable_cost, price_change):
     list1 = list(range(0, 8760))
 
     if math.isclose(power_cost, 0.0):#power_cost == 0:
-        marginrevenue1 = pd.DataFrame(electricity_cost_data, columns=['price'])
+        marginrevenue1 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         marginrevenue = marginrevenue1 * price_change
     else:
         list2 = list1.copy()
@@ -341,11 +344,13 @@ def output_x_to_power(power_cost, power_technology, product_price, efficiency_el
 
 #Function calculates the profitability (NPV and cash flows over runtime) for the designed X-to-Power plant
 def dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime, product_price,
-                   variable_cost, power_cost, heat_cost, efficiency_el, efficiency_q, margincost_model, wacc,
+                   variable_cost, power_cost, power_price_series,
+                   heat_cost, efficiency_el, efficiency_q, margincost_model, wacc,
                    price_change, capex_decrease, opex_decrease):
 
-    output_xtp = output_x_to_power(power_cost, power_technology, product_price, efficiency_el, efficiency_q, margincost_model,
-                      variable_cost, price_change)
+    output_xtp = output_x_to_power(power_cost, power_price_series, power_technology,
+                                   product_price, efficiency_el, efficiency_q, margincost_model,
+                                   variable_cost, price_change)
 
     list1 = list(range(0, 8760))
 
@@ -356,7 +361,7 @@ def dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime,
     list2[0:8760] = [int(power_cost) for i in list2[0:8760]]
 
     if math.isclose(power_cost, 0.0):#power_cost is int(0):
-        power_cost3 = pd.DataFrame(electricity_cost_data, columns=['price'])
+        power_cost3 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         power_cost2 = power_cost3 * price_change
     else:
         list2 = list1.copy()
@@ -415,7 +420,8 @@ def dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime,
 #Function calculates the technical dimension for infrastructure
 def infrastructure_dimension(ptx_technology, infrastructure_type, distance, power_technology, input_technology,
                              efficiency, product_price, margincost_model, variable_cost, location, power_input,
-                             power_cost, efficiency_el, efficiency_q, price_change, transport_pressure, capacity,
+                             power_cost, power_price_series, efficiency_el,
+                             efficiency_q, price_change, transport_pressure, capacity,
                              share_input_wind, share_input_pv):
 
     list_ptx = ["Power-to-X"]
@@ -423,7 +429,8 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
 
     if ptx_technology in list_ptx:
         output_ptx = output_power_to_x(power_technology, input_technology, efficiency, product_price,
-                                       margincost_model, variable_cost, location, power_input, price_change,
+                                       margincost_model, variable_cost, location,
+                                       power_input, power_price_series, price_change,
                                        share_input_wind, share_input_pv)
         output1 = output_ptx['production']
 
@@ -477,15 +484,18 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
 def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_technology, input_technology,
                        efficiency, product_price, margincost_model, variable_cost, location, power_input,
-                       power_cost, efficiency_el, efficiency_q, runtime, wacc, price_change, capex_compressor_1,
+                       power_cost, power_price_series, efficiency_el, efficiency_q,
+                       runtime, wacc, price_change, capex_compressor_1,
                        capex_compressor_2, opex_compressor_rate, capex_pipe_1, capex_pipe_2,
                        capex_pipe_3, opex_pipe_rate, capex_trailer, capex_storagetank, transport_pressure,
                        capacity, opex_trailer, capex_liquifier, opex_liquifier_rate, share_input_wind, share_input_pv):
 
     infrastructure = infrastructure_dimension(ptx_technology, infrastructure_type, distance, power_technology,
                                               input_technology, efficiency, product_price, margincost_model,
-                                              variable_cost, location, power_input, power_cost, efficiency_el,
-                                              efficiency_q, price_change, transport_pressure, capacity,
+                                              variable_cost, location,
+                                              power_input, power_cost, power_price_series,
+                                              efficiency_el, efficiency_q,
+                                              price_change, transport_pressure, capacity,
                                               share_input_wind, share_input_pv)
 
 
