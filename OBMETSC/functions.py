@@ -26,7 +26,7 @@ from databank import *
 
 
 # Function calculates the production profile for a renewable energy plant
-def output_power_production(input_technology, power_input, location, share_input_wind, share_input_pv):
+def output_power_production(input_technology : str, power_input, location, share_input_wind, share_input_pv):
     input_technology = str(input_technology)
     power_input = float(power_input)
     location = str(location)
