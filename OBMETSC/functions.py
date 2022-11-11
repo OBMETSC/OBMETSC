@@ -443,12 +443,14 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
 
     # Umrechnung von MWh in kg der Produktions-Profile
     production_profile1 = output['production'] * (1000/33.33)
+    #production_profile1 = demand_h2 * (1000/33.33)
     production_profile = pd.DataFrame({"production": production_profile1})
 
     throughput = production_profile['production'].max()  #maximum throughput is design throughput of compressor
+# für Pipeline
 
-    if infrastructure_type == "Pipeline":
-        gas_flow_hour = (throughput * 259.8 * 273) / (
+    if infrastructure_type == "Pipeline": #Rs von H2 ist 4124.2 nicht 259,8 (O2)
+        gas_flow_hour = (throughput * 4124.2 * 273) / (
                     transport_pressure * (10 ^ 5))  #volume flow with ideal gas law
         gas_flow = gas_flow_hour / (60 * 60)
         pipe_diameter = math.sqrt((4 / math.pi) * (gas_flow / (20 / 3.6)))
@@ -458,28 +460,41 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
         amount_storage = 0
         amount_trailer = 0
         pipe_length = int(distance)
-
+#für LKW Tubetrailer
     else:
         pipe_diameter = 0
         pipe_length = 0
-        loading_time = 2
+        loading_time = 2 #hier raus in Main unterschiedlich für Tubetrailer und LNG
         speed = 50
         timeframe = 16
-
-        transportdauer = int(distance) / int(speed) + int(loading_time)
+#hier hin und Rückfahrt beachten
+        transportdauer = 2*(int(distance) / int(speed)) + 2*(int(loading_time))
         daily_tours = timeframe / transportdauer
         daily_production = (production_profile['production'].sum()) / 365
+        #amount_tours_year = yearly_production(bzw demand in kg)/capacity
+        #intervall_tours in hours = (8760/amount_tours_year)-transportdauer ->alle x Stunden kommt eine Lieferung
+        #intervall_tours in days = intervall_tours in hours/24 -> alle x tage kommt eine Lieferung
+        #Randbedingung: transportdauer < timeframe (sonst Anzahl Fahrer+1) -> Gesamtfahrzeit darf die Arbeitsdauer eines Fahrers nicht überschreiten
+
+
         amount_tours_day = daily_production / capacity
         amount_trailer = math.ceil(amount_tours_day / daily_tours)
 
+        #Zwischenspeicher/LKw Trailer = intervall_tours in days * produktionsmenge_daily (max_production) -> Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte Belieferungsintervall speichern können
+
+        #bei Ausrichtung an Verbraucher, sollte ein Peak demand berücksichtigt werden, der immer zur Verfügung steht und bei der Speicherauslegung berücksichtigt werden muss
+        #demand_peak = demand_peak_day * intervall_tours in days -> um Verbrauchspeaks zu decken, sollte der Speicher vor Ort (auf Firmengelände) einen Puffer haben
+        #storage_dimension (kg) = (capacity+(demand_peak-capacity) -> Die Auslegung des Speichers ergibt sich durch die Belieferungsmenge + den Peak-Puffer. Der Puffer entspricht der Differenz aus Belieferungsmenge(Kapazität des LKWs) und dem Verbrauchspeak über das Belieferungsintervall
+        #storage_dimension_m3 = storage_dimension/14 (für 200 bar Druckspeicher) -> Ein Druckspeicher, speichert bei 200 bar 14kg pro m3
         storage_dimension = (timeframe / amount_tours_day) * production_profile['production'].max()
-        amount_storage = math.ceil(storage_dimension / 400)
+
         #every x hours is transported away, resulting in a storage requirement of "x * fullload-production"
-        #assumption: One storage container can store 400 kg
+
+
 
     return (amount_trailer, storage_dimension, amount_storage, transport_pressure,
             pipe_diameter, pipe_length, throughput)
-
+#return (intervall_tours_in_days, Zwischenspeicher, storage dimension)
 
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
 def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_technology, input_technology,
@@ -498,18 +513,21 @@ def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_tech
                                               price_change, transport_pressure, capacity,
                                               share_input_wind, share_input_pv)
 
-
-    if infrastructure[2] > 0:
-        capex_storage = infrastructure[2] * capex_storagetank
-        opex_storage = 0.02 * capex_storage
-    else:
+#Wenn Infrastruktur = LKW
+    #capex_zwischenspeicher = Zwischenspeicher_m3 * capex_Speicher (€/m3)
+    #opex_zwischenspeicher = capex_zwischenspeicher * 0.02
+    if infrastructure[2] > 0:#was verbirgt sich hinter infrastructure[2]?
+        capex_storage = infrastructure[2] * capex_storagetank # capex_storage = capex_storage_€prokgH2 * storage_demand
+        opex_storage = 0.02 * capex_storage # opex_storage = 0.02 * capex_storage
+    else: #für pipeline?
         capex_storage = 0
         opex_storage = 0
 
     if infrastructure[0] > 0:
-        capex_transport = infrastructure[0] * capex_trailer
-        opex_transport = opex_trailer
-
+        capex_transport = infrastructure[0] * capex_trailer #capex_tank = capex_tank_€prokW * capacity_tank
+                                                            #capex_transport = capex_tank + capex_truck
+        opex_transport = opex_trailer #opex_tank = 0.02 * capex_tank
+                                      #opex_transport = opex_tank + opex_truck
     elif infrastructure[4] > 0:
         if 0.25 > infrastructure[4] > 0:
             capex_transport = capex_pipe_1 * infrastructure[5]
@@ -521,7 +539,7 @@ def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_tech
         opex_transport = opex_pipe_rate * capex_transport
 
     #calcualtion of compressor cost
-    if infrastructure[3] == 20:
+    if infrastructure[3] == 20: #Kompressor für 20 bar
         capex_compressor = capex_compressor_1 * power_technology
         opex_compressor = opex_compressor_rate * capex_compressor
         capex_liqu = 0

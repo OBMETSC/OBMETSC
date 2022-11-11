@@ -76,6 +76,7 @@ def input():
 def get():
 
 #the following variables are getting the informations from the input.html page
+    #demand_h2 = float(request.form['h2_demand']) Angabe auf input.html page in kWh/a
     ptx_technology = str(request.form['ptx_technology'])
     capex_technology = float(request.form['capex_technology'])
     opex_technology = float(request.form['opex_technology'])
@@ -129,6 +130,9 @@ def get():
     efficiency_el = float(efficiency_ele/100)
     efficiency_q = float(efficiency_th/100)
     efficiency = float(efficiency_ele/100)
+    #demand_h2_kw = float(demand_h2/8760)
+    #demand_h2_kg = float(demand_h2/33,3)
+
 
     #if input technology is "Grid", there is a zero set as default value for power input and location
     if input_technology == "Grid":
@@ -142,9 +146,9 @@ def get():
     opex_technology = opex_technology_kw * capex_technology_kw * 1000
 
     # cost databasis for infastructure
-    capex_compressor_1 = 300000 * 0.046
-    capex_compressor_2 = 350000 * 0.157
-    opex_compressor_rate = 0.75
+    capex_compressor_1 = 300000 * 0.046 #Kompressor für 20 bar: capex_compressor_1 = 71
+    capex_compressor_2 = 350000 * 0.157 #
+    opex_compressor_rate = 0.75 # opex_compressor_rate = 0.05
 
     capex_liquifier = 7200
     opex_liquifier_rate = 0.76
@@ -154,20 +158,30 @@ def get():
     capex_pipe_3 = 2800000
     opex_pipe_rate = 0.01
 
+    #capex_truck = 190000
+    #opex_truck = 0.12 * 190000
 
-    capex_storagetank = 100000
+    capex_storagetank = 100000 #raus: individuell für LNG und Tubetrailer
+
+
 
     if infrastructure_type == "Tubetrailer":
         transport_pressure = 400
-        capex_trailer = 150000
-        opex_trailer = 75000
-        capacity = 400
+        capex_trailer = 150000 #Capex_trailer_€prokg = 500
+        opex_trailer = 75000 #opex_trailer = 0.02 * capex_trailer
+        capacity = 400 # 774 kg
+       # loading_time = 1.5
+       # capex_storage €prokgH2 = 460
 
     elif infrastructure_type == "LNG":
-        transport_pressure = 0
-        capex_trailer = 750000
-        opex_trailer = 75000
-        capacity = 1200
+        transport_pressure = 0 # 1bar
+        capex_trailer = 750000 #Capex_trailer_€prokg = 212
+        opex_trailer = 75000 #opex_trailer = 0.02 * capex_trailer
+        capacity = 1200 # capacity = 4300
+        #loading_time = 3
+        #transport_lost_day = 0.015
+        # capex_storage_€prokgH2 = 33
+
 
     elif infrastructure_type == "Pipeline":
         transport_pressure = 20
@@ -258,4 +272,5 @@ def get():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
