@@ -447,8 +447,17 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
     production_profile = pd.DataFrame({"production": production_profile1})
 
     throughput = production_profile['production'].max()  #maximum throughput is design throughput of compressor
-# für Pipeline
 
+# if do_infrastructure == 'no' -> wir brauchen trotzdem einen Speicher für den produzieren Wasserstoff (On-Site EL)
+    #storage_dimension =  = 14 * production_profile['production'].max() -> der Speicher soll für 14 Produktionstage (max) ohne Entnahme ausgelegt werden.
+    #capex_storage = capex_storage_€prokgH2 * storage_dimension
+    # opex_storage = 0.02 * capex_storage
+    #
+    #
+    #
+
+# if do_infrastructure == 'yes'
+# für Pipeline
     if infrastructure_type == "Pipeline": #Rs von H2 ist 4124.2 nicht 259,8 (O2)
         gas_flow_hour = (throughput * 4124.2 * 273) / (
                     transport_pressure * (10 ^ 5))  #volume flow with ideal gas law
@@ -513,11 +522,13 @@ def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_tech
                                               price_change, transport_pressure, capacity,
                                               share_input_wind, share_input_pv)
 
+
+
 #Wenn Infrastruktur = LKW
-    #capex_zwischenspeicher = Zwischenspeicher_m3 * capex_Speicher (€/m3)
+    #capex_zwischenspeicher = Zwischenspeicher_kg * capex_storage €prokgH2
     #opex_zwischenspeicher = capex_zwischenspeicher * 0.02
     if infrastructure[2] > 0:#was verbirgt sich hinter infrastructure[2]?
-        capex_storage = infrastructure[2] * capex_storagetank # capex_storage = capex_storage_€prokgH2 * storage_demand
+        capex_storage = infrastructure[2] * capex_storagetank # capex_storage = capex_storage_€prokgH2 * storage_dimension (kg)
         opex_storage = 0.02 * capex_storage # opex_storage = 0.02 * capex_storage
     else: #für pipeline?
         capex_storage = 0
@@ -539,12 +550,12 @@ def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_tech
         opex_transport = opex_pipe_rate * capex_transport
 
     #calcualtion of compressor cost
-    if infrastructure[3] == 20: #Kompressor für 20 bar
-        capex_compressor = capex_compressor_1 * power_technology
+    if infrastructure[3] == 20: #Kompressor für 20 bar (H2 kommt aus EL mit ca 20 bar -> warum komprimieren?)
+        capex_compressor = capex_compressor_1 * power_technology #capex_compressor_1 * production_profile1
         opex_compressor = opex_compressor_rate * capex_compressor
         capex_liqu = 0
         opex_liqu = 0
-    elif infrastructure[3] == 400:
+    elif infrastructure[3] == 400:# Kompressor für 400 bar
         capex_compressor = capex_compressor_2 * power_technology
         opex_compressor = opex_compressor_rate * capex_compressor
         capex_liqu = 0
