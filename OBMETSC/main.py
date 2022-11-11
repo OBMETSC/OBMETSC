@@ -146,12 +146,15 @@ def get():
     opex_technology = opex_technology_kw * capex_technology_kw * 1000
 
     # cost databasis for infastructure
-    capex_compressor_1 = 300000 * 0.046 #Kompressor für 20 bar: capex_compressor_1 = 71
-    capex_compressor_2 = 350000 * 0.157 #
+    capex_compressor_1 = 300000 * 0.046 #Kompressor für 100-200 bar: capex_compressor_1 = 71
+    capex_compressor_2 = 350000 * 0.157 #Kompressor bis 350 bar: capex_compressor_2 = 142
+    #Kompressor bis 450 bar in €/kW: capex_compressor_3 = 216
     opex_compressor_rate = 0.75 # opex_compressor_rate = 0.05
+    #amortization_compressor = 15
 
-    capex_liquifier = 7200
-    opex_liquifier_rate = 0.76
+    capex_liquifier = 7200 #capex_liquifier_€/kW = 1405
+    opex_liquifier_rate = 0.76 #opex_liquifier_rate = 0.04
+    # amortization_liquifier = 30
 
     capex_pipe_1 = 1200000
     capex_pipe_2 = 1500000
@@ -160,8 +163,11 @@ def get():
 
     #capex_truck = 190000
     #opex_truck = 0.12 * 190000
-
+    #amortization_truck = 8
+    #amortization_tank = 12
+    # amortization_storage = 30
     capex_storagetank = 100000 #raus: individuell für LNG und Tubetrailer
+
 
 
 
@@ -172,6 +178,7 @@ def get():
         capacity = 400 # 774 kg
        # loading_time = 1.5
        # capex_storage €prokgH2 = 460
+
 
     elif infrastructure_type == "LNG":
         transport_pressure = 0 # 1bar
