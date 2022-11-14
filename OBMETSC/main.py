@@ -156,38 +156,40 @@ def get():
     opex_liquifier_rate = 0.76 #opex_liquifier_rate = 0.04
     # amortization_liquifier = 30
 
-    capex_pipe_1 = 1200000
+    capex_pipe_1 = 400000 #in €/km
     capex_pipe_2 = 1500000
     capex_pipe_3 = 2800000
     opex_pipe_rate = 0.01
 
-    #capex_truck = 190000
-    #opex_truck = 0.12 * 190000
-    #amortization_truck = 8
-    #amortization_tank = 12
-    # amortization_storage = 30
-    capex_storagetank = 100000 #angegeben in €/Speicher. raus: individuell für LNG und Tubetrailer
+    capex_truck = 190000
+    opex_truck = 0.12 * 190000
+    amortization_truck = 8
+    amortization_tank = 12
+    amortization_storage = 30
 
-
-
+#gas_flow_hour in m3/h für die unterschiedlichen Pipelines im VNB
+    #gas_flow_hour_1 = 49.89
+    #gas_flow_hour_2 = 81.73
+    #gas_flow_hour_3 = 801.49
+    #gas_flow_hour_4 = 3205.94
 
     if infrastructure_type == "Tubetrailer":
         transport_pressure = 400
-        capex_trailer = 150000 #Capex_trailer_€prokg = 500
-        opex_trailer = 75000 #opex_trailer = 0.02 * capex_trailer
-        capacity = 400 # 774 kg
-       # loading_time = 1.5
-       # capex_storage €prokgH2 = 600
+        capex_trailer_spez = 500
+        opex_trailer = 0.02 * capex_trailer
+        capacity = 774
+        loading_time = 1.5
+        capex_storage_spez = 600
 
 
     elif infrastructure_type == "LNG":
         transport_pressure = 0 # 1bar
-        capex_trailer = 750000 #Capex_trailer_€prokg = 212
-        opex_trailer = 75000 #opex_trailer = 0.02 * capex_trailer
-        capacity = 1200 # capacity = 4300
-        #loading_time = 3
-        #transport_lost_day = 0.015
-        # capex_storage_€prokgH2 = 105
+        capex_trailer_spez =  212
+        opex_trailer = 0.02 * capex_trailer
+        capacity =  4300
+        loading_time = 3
+        transport_lost_day = 0.015
+        capex_storage_spez = 105
 
 
     elif infrastructure_type == "Pipeline":

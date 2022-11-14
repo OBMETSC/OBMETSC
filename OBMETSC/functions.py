@@ -446,7 +446,8 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
     #production_profile1 = demand_h2 * (1000/33.33)
     production_profile = pd.DataFrame({"production": production_profile1})
 
-    throughput = production_profile['production'].max()  #maximum throughput is design throughput of compressor
+    throughput = production_profile['production'].max()  #maximum throughput is design throughput of compressor und Pipeline Auslegung
+    #throughput_m3 = throughput/0.09
 
 # if do_infrastructure == 'no' -> wir brauchen trotzdem einen Speicher für den produzierten Wasserstoff (On-Site EL)
     #storage_dimension = 168 * throughput -> der Speicher soll für 168 Produktionsstunden (max) ohne Entnahme ausgelegt werden.
@@ -455,12 +456,21 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
 
 # if do_infrastructure == 'yes'
 # für Pipeline
-    if infrastructure_type == "Pipeline": #Rs von H2 ist 4124.2 nicht 259,8 (O2)
+    if infrastructure_type == "Pipeline": #Rs von H2 ist 4124.2
         gas_flow_hour = (throughput * 4124.2 * 273) / (
                     transport_pressure * (10 ^ 5))  #volume flow with ideal gas law
         gas_flow = gas_flow_hour / (60 * 60)
         pipe_diameter = math.sqrt((4 / math.pi) * (gas_flow / (20 / 3.6)))
         #formula for calculation of the pipe diameter (20/3.6 entspricht 20 kmh in m/s)
+   # if infrastructure_type == "Pipeline":
+        # if throughput_m3 < gas_flow_hour_1
+            #gas_flow_hour = gas_flow_hour_1
+        #elif throughput_m3 < gas_flow_hour_2
+            #gas_flow_hour = gas_flow_hour_2
+        #elif throughput_m3 < gas_flow_hour_3
+            # gas_flow_hour = gas_flow_hour_3
+        #else throughput_m3 < gas_flow_hour_4
+            # gas_flow_hour = gas_flow_hour_4
 
         storage_dimension = 0
         amount_storage = 0
@@ -543,7 +553,14 @@ def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_tech
             capex_transport = capex_pipe_2 * infrastructure[5]
         elif infrastructure[4] > 0.5:
             capex_transport = capex_pipe_3 * infrastructure[5]
-
+      #if throughput_m3 < gas_flow_hour_1
+            #capex_transport =
+        #elif throughput_m3 < gas_flow_hour_2
+            #gas_flow_hour = gas_flow_hour_2
+        #elif throughput_m3 < gas_flow_hour_3
+            # gas_flow_hour = gas_flow_hour_3
+        #else throughput_m3 < gas_flow_hour_4
+            # gas_flow_hour = gas_flow_hour_4
         opex_transport = opex_pipe_rate * capex_transport
 
     #calcualtion of compressor cost; infrastructure[3] = transport_pressure
