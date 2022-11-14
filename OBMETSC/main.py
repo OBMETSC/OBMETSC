@@ -166,7 +166,7 @@ def get():
     #amortization_truck = 8
     #amortization_tank = 12
     # amortization_storage = 30
-    capex_storagetank = 100000 #raus: individuell für LNG und Tubetrailer
+    capex_storagetank = 100000 #angegeben in €/Speicher. raus: individuell für LNG und Tubetrailer
 
 
 
@@ -177,7 +177,7 @@ def get():
         opex_trailer = 75000 #opex_trailer = 0.02 * capex_trailer
         capacity = 400 # 774 kg
        # loading_time = 1.5
-       # capex_storage €prokgH2 = 460
+       # capex_storage €prokgH2 = 600
 
 
     elif infrastructure_type == "LNG":
@@ -187,7 +187,7 @@ def get():
         capacity = 1200 # capacity = 4300
         #loading_time = 3
         #transport_lost_day = 0.015
-        # capex_storage_€prokgH2 = 33
+        # capex_storage_€prokgH2 = 105
 
 
     elif infrastructure_type == "Pipeline":
@@ -242,6 +242,8 @@ def get():
     x = pd.DataFrame({"default": list1, "default": list1})
     h = [x, "default"]
     infrastructure = False
+    #storage dimension and costs should be calculated
+
 
     #if infrastructure should be dimensioned, the functions g and h are executed
     if do_infrastructure == "yes":
