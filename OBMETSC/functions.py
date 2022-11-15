@@ -432,14 +432,14 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
                                        margincost_model, variable_cost, location,
                                        power_input, power_price_series, price_change,
                                        share_input_wind, share_input_pv)
-        output1 = output_ptx['production']
+        output1 = output_ptx['production'] #
 
     elif ptx_technology in list_xtp:
         output_xtp = output_x_to_power(power_cost, power_technology, product_price, efficiency_el, efficiency_q,
                           margincost_model, variable_cost, price_change)
         output1 = output_xtp["input_product_demand"]
 
-    output = pd.DataFrame({"production": output1})
+    output = pd.DataFrame({"production": output1}) #in MWh/h
 
     # Umrechnung von MWh in kg der Produktions-Profile
     production_profile1 = output['production'] * (1000/33.33)
@@ -548,19 +548,19 @@ def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_tech
                                       #opex_transport = opex_tank + opex_truck
     elif infrastructure[4] > 0: #pipe_diameter
         if 0.25 > infrastructure[4] > 0:
-            capex_transport = capex_pipe_1 * infrastructure[5]
+            capex_transport = capex_pipe_1 * infrastructure[5] #pipe_length
         elif 0.5 > infrastructure[4] > 0.25:
             capex_transport = capex_pipe_2 * infrastructure[5]
         elif infrastructure[4] > 0.5:
             capex_transport = capex_pipe_3 * infrastructure[5]
       #if throughput_m3 < gas_flow_hour_1
-            #capex_transport =
+            #capex_transport = capex_pipe_1 * infrastructure[5]
         #elif throughput_m3 < gas_flow_hour_2
-            #gas_flow_hour = gas_flow_hour_2
+            #capex_transport = capex_pipe_2 * infrastructure[5]
         #elif throughput_m3 < gas_flow_hour_3
-            # gas_flow_hour = gas_flow_hour_3
+            # gcapex_transport = capex_pipe_3 * infrastructure[5]
         #else throughput_m3 < gas_flow_hour_4
-            # gas_flow_hour = gas_flow_hour_4
+            # capex_transport = capex_pipe_4 * infrastructure[5]
         opex_transport = opex_pipe_rate * capex_transport
 
     #calcualtion of compressor cost; infrastructure[3] = transport_pressure
@@ -569,6 +569,16 @@ def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_tech
         opex_compressor = opex_compressor_rate * capex_compressor
         capex_liqu = 0
         opex_liqu = 0
+    #elif infrastructure[3] == 200
+        #capex_compressor = capex_compressor_1 * (output['production']/1000) #in kwh H2 /h
+        #opex_compressor = opex_compressor_rate * capex_compressor
+        #capex_liqu = 0
+        #opex_liqu = 0
+    #elif infrastructure[3] == 350
+        #capex_compressor = capex_compressor_2 * (output['production']/1000) #in kwh H2 /h
+        #opex_compressor = opex_compressor_rate * capex_compressor
+        #capex_liqu = 0
+        #opex_liqu = 0
     elif infrastructure[3] == 400:# Kompressor für 400 bar
         capex_compressor = capex_compressor_2 * power_technology
         opex_compressor = opex_compressor_rate * capex_compressor

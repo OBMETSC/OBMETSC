@@ -154,12 +154,16 @@ def get():
 
     capex_liquifier = 7200 #capex_liquifier_€/kW = 1405
     opex_liquifier_rate = 0.76 #opex_liquifier_rate = 0.04
-    # amortization_liquifier = 30
+    #amortization_liquifier = 30
 
-    capex_pipe_1 = 400000 #in €/km
-    capex_pipe_2 = 1500000
-    capex_pipe_3 = 2800000
-    opex_pipe_rate = 0.01
+    capex_pipe_1 = 400000 #in €/km (DN25/DP1)
+    capex_pipe_2 = 400000 #(DN32/DP1)
+    capex_pipe_3 = 850000 #(DN100/DP4)
+    #capex_pipe_4 = 950000 #(DN200/DP4)
+    opex_pipe_rate = 0.04
+    #amortization_pipelin = 40
+    #GDRMA = 800000 #€/Stück, eine Anlage alle 35 km
+    #Netzanschluss = 20.000 #€/Netzanschluss
 
     capex_truck = 190000
     opex_truck = 0.12 * 190000
@@ -184,16 +188,16 @@ def get():
 
     elif infrastructure_type == "LNG":
         transport_pressure = 0 # 1bar
-        capex_trailer_spez =  212
+        capex_trailer_spez = 212
         opex_trailer = 0.02 * capex_trailer
-        capacity =  4300
+        capacity = 4300
         loading_time = 3
         transport_lost_day = 0.015
         capex_storage_spez = 105
 
 
     elif infrastructure_type == "Pipeline":
-        transport_pressure = 20
+        transport_pressure = 20 #würde ich hier vernachlässigen
         capex_trailer = 0
         opex_trailer = 0
         capacity = 0
