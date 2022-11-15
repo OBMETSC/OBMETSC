@@ -432,7 +432,7 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
                                        margincost_model, variable_cost, location,
                                        power_input, power_price_series, price_change,
                                        share_input_wind, share_input_pv)
-        output1 = output_ptx['production'] #
+        output1 = output_ptx['production'] #in MW
 
     elif ptx_technology in list_xtp:
         output_xtp = output_x_to_power(power_cost, power_technology, product_price, efficiency_el, efficiency_q,
@@ -440,6 +440,7 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
         output1 = output_xtp["input_product_demand"]
 
     output = pd.DataFrame({"production": output1}) #in MWh/h
+    #output_kW = output/1000
 
     # Umrechnung von MWh in kg der Produktions-Profile
     production_profile1 = output['production'] * (1000/33.33)
@@ -450,7 +451,7 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
     #throughput_m3 = throughput/0.09
 
 # if do_infrastructure == 'no' -> wir brauchen trotzdem einen Speicher für den produzierten Wasserstoff (On-Site EL)
-    #storage_dimension = 168 * throughput -> der Speicher soll für 168 Produktionsstunden (max) ohne Entnahme ausgelegt werden.
+    #storage_dimension = 168 * throughput -> der Speicher soll für 168 Produktionsstunden (7 Tage) ohne Entnahme ausgelegt werden.
     #capex_storage = capex_storage_€prokgH2 * storage_dimension
     #opex_storage = 0.02 * capex_storage
 
