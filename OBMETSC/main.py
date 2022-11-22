@@ -162,7 +162,7 @@ def get():
     #capex_pipe_4 = 950000 #(DN200/DP4)
     opex_pipe_rate = 0.04
     #amortization_pipelin = 40
-    #GDRMA = 800000 #€/Stück, eine Anlage alle 35 km
+    #GDRMA = 77000 #€/Stück, eine Anlage alle 35 km, 400 m3/h
     #Netzanschluss = 20.000 #€/Netzanschluss
 
     capex_truck = 190000

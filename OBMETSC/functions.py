@@ -457,7 +457,7 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
 
 # if do_infrastructure == 'yes'
 # für Pipeline
-    if infrastructure_type == "Pipeline": #Rs von H2 ist 4124.2
+    if infrastructure_type == "Pipeline": #Rs von H2 ist 4124.2                                               #RAUS
         gas_flow_hour = (throughput * 4124.2 * 273) / (
                     transport_pressure * (10 ^ 5))  #volume flow with ideal gas law
         gas_flow = gas_flow_hour / (60 * 60)
@@ -469,9 +469,9 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
         #elif throughput_m3 < gas_flow_hour_2
             #gas_flow_hour = gas_flow_hour_2
         #elif throughput_m3 < gas_flow_hour_3
-            # gas_flow_hour = gas_flow_hour_3
+            #gas_flow_hour = gas_flow_hour_3
         #else throughput_m3 < gas_flow_hour_4
-            # gas_flow_hour = gas_flow_hour_4
+            #gas_flow_hour = gas_flow_hour_4
 
         storage_dimension = 0
         amount_storage = 0
@@ -479,9 +479,9 @@ def infrastructure_dimension(ptx_technology, infrastructure_type, distance, powe
         pipe_length = int(distance)
 #für LKW Tubetrailer und LH2
     else:
-        pipe_diameter = 0
+        pipe_diameter = 0                                                                                       #RAUS
         pipe_length = 0
-        loading_time = 2 #hier raus in Main unterschiedlich für Tubetrailer und LNG
+        loading_time = 2                                    #hier RAUS in Main unterschiedlich für Tubetrailer und LNG
         speed = 50
         timeframe = 16
 #hier hin und Rückfahrt beachten
@@ -555,14 +555,22 @@ def infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_tech
         elif infrastructure[4] > 0.5:
             capex_transport = capex_pipe_3 * infrastructure[5]
       #if throughput_m3 < gas_flow_hour_1
-            #capex_transport = capex_pipe_1 * infrastructure[5]
+            #capex_pipe = capex_pipe_1 * infrastructure[5]
         #elif throughput_m3 < gas_flow_hour_2
-            #capex_transport = capex_pipe_2 * infrastructure[5]
+            #capex_pipe = capex_pipe_2 * infrastructure[5]
         #elif throughput_m3 < gas_flow_hour_3
-            # gcapex_transport = capex_pipe_3 * infrastructure[5]
+            #capex_pipe = capex_pipe_3 * infrastructure[5]
         #else throughput_m3 < gas_flow_hour_4
-            # capex_transport = capex_pipe_4 * infrastructure[5]
-        opex_transport = opex_pipe_rate * capex_transport
+            #capex_pipe = capex_pipe_4 * infrastructure[5]
+        #opex_pipe = opex_pipe_rate * capex_pipe
+
+    #Druckreduktion in Pipeline für Endanwendung durch GDRMA alle 35 km. (Mind. 1)
+    #GDRMA_amount = math.ceil(pipe_lengh/35)
+    #capex_GDRMA = GDRMA_amount * GDRMA
+    #opex_GDRMA =
+
+    #capex_transport = capex_pipe + capex_GDRMA
+    #opex_transport = opex_pipe # opex_GDRMA
 
     #calcualtion of compressor cost; infrastructure[3] = transport_pressure
     if infrastructure[3] == 20: #Kompressor für 20 bar (H2 kommt aus EL mit ca 20 bar -> warum komprimieren?)
