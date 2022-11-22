@@ -108,6 +108,8 @@ def get():
     product_price = float(request.form['product_price'])
     runtime = int(request.form['runtime'])
     do_infrastructure = str(request.form['do_infrastructure'])
+    do_storage = str(request.form['do_storage'])
+    min_storage_dimension_kwh = float(request.form['storage_dimension'])
 
 #changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)
@@ -115,12 +117,13 @@ def get():
     EEG_expenditure = EEG_reduction  # price for MWh power, reduced with input
     stromsteuer_expenditure = stromsteuer_reduction
     KWKG_expenditure = KWKG_reduction
-    netzentgelte_expenditure =  netzentgelte_reduction  # sum of expenditure from StromNEV, Offshore, Abschaltbare Anlagen, Konzession
+    netzentgelte_expenditure = netzentgelte_reduction  # sum of expenditure from StromNEV, Offshore, Abschaltbare Anlagen, Konzession
     regulations_grid_expenditure = stromsteuer_expenditure + KWKG_expenditure + netzentgelte_expenditure
     capex_decrease = float(1 - (capex_subvention / 100))
     opex_decrease = float(1 - (opex_subvention / 100))
     share_input_wind = float(share_input_wind / 100)
     share_input_pv = float(share_input_pv / 100)
+    min_storage_dimension_kg = min_storage_dimension_kwh / 33.3
 
     #the values are translated into the variables for the functions, efficiency is set as electrical efficiency
     capex_power_kw = capex_input
@@ -146,24 +149,25 @@ def get():
     opex_technology = opex_technology_kw * capex_technology_kw * 1000
 
     # cost databasis for infastructure
-    capex_compressor_1 = 300000 * 0.046 #Kompressor für 100-200 bar: capex_compressor_1 = 71
-    capex_compressor_2 = 350000 * 0.157 #Kompressor bis 350 bar: capex_compressor_2 = 142
-    #Kompressor bis 450 bar in €/kW: capex_compressor_3 = 216
-    opex_compressor_rate = 0.75 # opex_compressor_rate = 0.05
-    #amortization_compressor = 15
+    # WERTE NICHT NACHVOLLZIEHBAR: capex_compressor_1 = 300000 * 0.046
+    capex_compressor_1 = 71  # Kompressor für 100-200 bar in €/kW
+    capex_compressor_2 = 142  # Kompressor bis 350 bar in €/kW
+    capex_compressor_3 = 216  # Kompressor bis 450 bar in €/kW
+    opex_compressor_rate = 0.05  # opex_compressor_rate = 0.75  -> WERTE finde ich nicht in der litaratur
+    # amortization_compressor = 15
 
-    capex_liquifier = 7200 #capex_liquifier_€/kW = 1405
-    opex_liquifier_rate = 0.76 #opex_liquifier_rate = 0.04
-    #amortization_liquifier = 30
+    capex_liquifier_euro_pro_kw = 1405  # capex_liquifier = 7200  -> Werte finde ich nicht  in Literatur
+    opex_liquifier_rate = 0.04  # opex_liquifier_rate = 0.76 -> Werte finde ich nicht  in Literatur
+    # amortization_liquifier = 30
 
-    capex_pipe_1 = 400000 #in €/km (DN25/DP1)
-    capex_pipe_2 = 400000 #(DN32/DP1)
-    capex_pipe_3 = 850000 #(DN100/DP4)
-    #capex_pipe_4 = 950000 #(DN200/DP4)
+    capex_pipe_1 = 400000  # in €/km (DN25/DP1)
+    capex_pipe_2 = 400000  # (DN32/DP1)
+    capex_pipe_3 = 850000  # (DN100/DP4)
+    capex_pipe_4 = 950000  # (DN200/DP4)
     opex_pipe_rate = 0.04
-    #amortization_pipelin = 40
-    #GDRMA = 77000 #€/Stück, eine Anlage alle 35 km, 400 m3/h
-    #Netzanschluss = 20.000 #€/Netzanschluss
+    # amortization_pipelin = 40
+    gdrma = 77000  # €/Stück, eine Anlage alle 35 km, 400 m3/h
+    # Netzanschluss = 20.000 #€/Netzanschluss
 
     capex_truck = 190000
     opex_truck = 0.12 * 190000
@@ -171,36 +175,28 @@ def get():
     amortization_tank = 12
     amortization_storage = 30
 
-#gas_flow_hour in m3/h für die unterschiedlichen Pipelines im VNB
-    #gas_flow_hour_1 = 49.89
-    #gas_flow_hour_2 = 81.73
-    #gas_flow_hour_3 = 801.49
-    #gas_flow_hour_4 = 3205.94
+    capex_storage_euro_pro_kg = 600
 
     if infrastructure_type == "Tubetrailer":
-        transport_pressure = 400
-        capex_trailer_spez = 500
-        opex_trailer = 0.02 * capex_trailer
-        capacity = 774
-        loading_time = 1.5
-        capex_storage_spez = 600
-
+        capex_trailer_spez = 600  # Euro pro kg
+        opex_trailer_rate = 0.02
+        capacity_1 = 378  # kg bei 200 bar
+        capacity_2 = 774  # kg bei 350 bar
+        capacity_3 = 1100  # kg bei 500 bar -> 618 € pro kg
+        capex_storage_euro_pro_kg = 600
 
     elif infrastructure_type == "LNG":
-        transport_pressure = 0 # 1bar
         capex_trailer_spez = 212
-        opex_trailer = 0.02 * capex_trailer
+        opex_trailer_rate = 0.02
         capacity = 4300
-        loading_time = 3
         transport_lost_day = 0.015
-        capex_storage_spez = 105
-
+        capex_storage_euro_pro_kg = 105
 
     elif infrastructure_type == "Pipeline":
-        transport_pressure = 20 #würde ich hier vernachlässigen
         capex_trailer = 0
         opex_trailer = 0
         capacity = 0
+        capex_storage_euro_pro_kg = 0
 
     #the value "renewables" is a True/False-variable that is important for frontend-html: If renewables true, the renewable energy production is shown as a figure
     renewables = False
@@ -254,21 +250,21 @@ def get():
     #if infrastructure should be dimensioned, the functions g and h are executed
     if do_infrastructure == "yes":
         infrastructure = True
-        g = infrastructure_dimension(ptx_technology, infrastructure_type, distance, power_technology,
+        g = infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology,
                                      input_technology, efficiency, product_price, margincost_model,
                                      variable_cost, location,
                                      power_input, power_cost, power_price_series,
                                      efficiency_el, efficiency_q, price_change, transport_pressure,
                                      capacity, share_input_wind, share_input_pv)
 
-        h = infrastructure_dcf(ptx_technology, infrastructure_type, distance, power_technology,
+        h = infrastructure_dcf(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology,
                                input_technology, efficiency, product_price, margincost_model, variable_cost, location,
                                power_input, power_cost, power_price_series,
                                efficiency_el, efficiency_q, runtime, wacc, price_change,
                                capex_compressor_1, capex_compressor_2, opex_compressor_rate,
-                               capex_pipe_1, capex_pipe_2, capex_pipe_3, opex_pipe_rate, capex_trailer,
+                               capex_pipe_1, capex_pipe_2, capex_pipe_3, opex_pipe_rate, capex_trailer, capex_storage_euro_pro_kg,
                                capex_storagetank, transport_pressure, capacity, opex_trailer, capex_liquifier,
-                               opex_liquifier_rate, share_input_wind, share_input_pv)
+                               opex_liquifier_rate, share_input_wind, share_input_pv, g)
 
 #a graphic is created from the power production profile
     if input_technology in list_pp and ptx_technology in list_ptx:
