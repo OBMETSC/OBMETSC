@@ -148,33 +148,6 @@ def get():
     capex_technology = capex_technology_kw * 1000
     opex_technology = opex_technology_kw * capex_technology_kw * 1000
 
-    # cost databasis for infastructure
-    # WERTE NICHT NACHVOLLZIEHBAR: capex_compressor_1 = 300000 * 0.046
-    capex_compressor_1 = 71  # Kompressor für 100-200 bar in €/kW
-    capex_compressor_2 = 142  # Kompressor bis 350 bar in €/kW
-    capex_compressor_3 = 216  # Kompressor bis 450 bar in €/kW
-    opex_compressor_rate = 0.05  # opex_compressor_rate = 0.75  -> WERTE finde ich nicht in der litaratur
-    # amortization_compressor = 15
-
-    capex_liquifier_euro_pro_kw = 1405  # capex_liquifier = 7200  -> Werte finde ich nicht  in Literatur
-    opex_liquifier_rate = 0.04  # opex_liquifier_rate = 0.76 -> Werte finde ich nicht  in Literatur
-    # amortization_liquifier = 30
-
-    capex_pipe_1 = 400000  # in €/km (DN25/DP1)
-    capex_pipe_2 = 400000  # (DN32/DP1)
-    capex_pipe_3 = 850000  # (DN100/DP4)
-    capex_pipe_4 = 950000  # (DN200/DP4)
-    opex_pipe_rate = 0.04
-    # amortization_pipelin = 40
-    gdrma = 77000  # €/Stück, eine Anlage alle 35 km, 400 m3/h
-    # Netzanschluss = 20.000 #€/Netzanschluss
-
-    capex_truck = 190000
-    opex_truck = 0.12 * 190000
-    amortization_truck = 8
-    amortization_tank = 12
-    amortization_storage = 30
-
     capex_storage_euro_pro_kg = 600
 
     if infrastructure_type == "Tubetrailer":
@@ -261,8 +234,8 @@ def get():
                                input_technology, efficiency, product_price, margincost_model, variable_cost, location,
                                power_input, power_cost, power_price_series,
                                efficiency_el, efficiency_q, runtime, wacc, price_change,
-                               capex_compressor_1, capex_compressor_2, opex_compressor_rate,
-                               capex_pipe_1, capex_pipe_2, capex_pipe_3, opex_pipe_rate, capex_trailer, capex_storage_euro_pro_kg,
+                               CAPEX_COMPRESSOR_1, CAPEX_COMPRESSOR_2, OPEX_COMPRESSOR_RATE,
+                               CAPEX_PIPE_1, CAPEX_PIPE_2, CAPEX_PIPE_3, OPEX_PIPE_RATE, capex_trailer, capex_storage_euro_pro_kg,
                                capex_storagetank, transport_pressure, capacity, opex_trailer, capex_liquifier,
                                opex_liquifier_rate, share_input_wind, share_input_pv, g)
 
