@@ -110,6 +110,7 @@ def get():
     do_infrastructure = str(request.form['do_infrastructure'])
     do_storage = str(request.form['do_storage'])
     min_storage_dimension_kwh = float(request.form['storage_dimension'])
+    storage_time = float(request.form['storage_dimension'])
 
 #changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)
@@ -148,19 +149,15 @@ def get():
     capex_technology = capex_technology_kw * 1000
     opex_technology = opex_technology_kw * capex_technology_kw * 1000
 
-    capex_storage_euro_pro_kg = 600
 
     if infrastructure_type == "Tubetrailer":
-        capex_trailer_spez = 600  # Euro pro kg
-        opex_trailer_rate = 0.02
         capacity_1 = 378  # kg bei 200 bar
         capacity_2 = 774  # kg bei 350 bar
         capacity_3 = 1100  # kg bei 500 bar -> 618 € pro kg
-        capex_storage_euro_pro_kg = 600
+        capex_storage_euro_pro_kg = 500
 
     elif infrastructure_type == "LNG":
         capex_trailer_spez = 212
-        opex_trailer_rate = 0.02
         capacity = 4300
         transport_lost_day = 0.015
         capex_storage_euro_pro_kg = 105
@@ -170,6 +167,8 @@ def get():
         opex_trailer = 0
         capacity = 0
         capex_storage_euro_pro_kg = 0
+    else:
+        capex_storage_euro_pro_kg = 600
 
     #the value "renewables" is a True/False-variable that is important for frontend-html: If renewables true, the renewable energy production is shown as a figure
     renewables = False

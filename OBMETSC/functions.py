@@ -37,18 +37,25 @@ OPEX_PIPE_RATE = 0.04
 GDRMA = 77000  # €/Stück, eine Anlage alle 35 km, 400 m3/h
 # Netzanschluss = 20.000 #€/Netzanschluss
 
-CAPEX_COMPRESSOR_1 = 71  # Kompressor für 100-200 bar in €/kW
-CAPEX_COMPRESSOR_2 = 142  # Kompressor bis 350 bar in €/kW
-CAPEX_COMPRESSOR_3 = 216  # Kompressor bis 450 bar in €/kW
-OPEX_COMPRESSOR_RATE = 0.05
-# amortization_compressor = 15
+OPEX_STORAGE_RATE = 0.02
+OPEX_TRAILER_RATE = 0.02
+
+CAPEX_TRAILER_200bar = 450000
+CAPEX_TRAILER_350bar = 550000
+CAPEX_TRAILER_550bar = 660000
+
+CAPEX_COMPRESSOR_1 = 71000  # 20-30 auf 100-200 bar
+CAPEX_COMPRESSOR_2 = 450000  # bis 550 bar
+OPEX_COMPRESSOR_1 = 0.05 * 71000
+OPEX_COMPRESSOR_2 = 0.02 * 450000
+
 
 CAPEX_LIQU_EURO_PRO_KW = 1405
 OPEX_LIQU_RATE = 0.04
 # amortization_liquifier = 30
 
-CAPEX_TRUCK = 190000
-OPEX_TRUCK = 0.12 * 190000
+CAPEX_TRUCK = 175000
+OPEX_TRUCK = 0.12 * 175000
 # amortization_truck = 8
 # amortization_tank = 12
 # amortization_storage = 30
@@ -108,7 +115,7 @@ def dcf_power_production(input_technology, power_input, capex_power, opex_power,
     list1 = list(range(0, runtime + 1))
 
     list2 = list1.copy()
-    list2[0] =  capex_plant
+    list2[0] = capex_plant
     list2[1:-1] = [opex_plant for i in list2[1:-1]]
     list2[-1] = opex_plant
 
@@ -260,7 +267,7 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     list2 = list1.copy()
     list2[0:8760] = [int(power_cost) for i in list2[0:8760]]
 
-    if math.isclose(power_cost, 0.0):#power_cost is int(0):
+    if math.isclose(power_cost, 0.0):  # power_cost is int(0):
         power_cost1 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         power_cost = power_cost1 * price_change
     else:
@@ -272,11 +279,11 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     variable_cost1 = variable_cost * output_ptx['production']
     x_production_cost1 = pd.DataFrame({"production_costs": (variable_cost1 + grid_cost)})
     x_production_cost = x_production_cost1['production_costs']
-    #According to current research: 40% EGG for own use, 100% for grid purchase.
+    # According to current research: 40% EGG for own use, 100% for grid purchase.
     variable_regulations_cost_1 = (-0.4) * EEG_expenditure * output_ptx['renewable_demand'].sum()
     variable_regulations_cost_2 = (-1) * (EEG_expenditure + regulations_grid_expenditure) * output_ptx['grid_demand'].sum()
 
-    #Here below: If wind or PV were used, then the costs from wind and PV are added
+    # Here below: If wind or PV were used, then the costs from wind and PV are added
     if output_ptx["renewable_demand"].sum() > 0:
         power_production_cost = (-1) * dcf_power['expenditure']
     else:
@@ -333,7 +340,7 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
 
 
 
-#Function calculates the production profile for a X-to-Power plant
+# Function calculates the production profile for a X-to-Power plant
 def output_x_to_power(power_cost, power_price_series, power_technology,
                       product_price, efficiency_el, efficiency_q, margincost_model,
                       variable_cost, price_change):
@@ -370,7 +377,7 @@ def output_x_to_power(power_cost, power_price_series, power_technology,
 
 
 
-#Function calculates the profitability (NPV and cash flows over runtime) for the designed X-to-Power plant
+# Function calculates the profitability (NPV and cash flows over runtime) for the designed X-to-Power plant
 def dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime, product_price,
                    variable_cost, power_cost, power_price_series,
                    heat_cost, efficiency_el, efficiency_q, margincost_model, wacc,
@@ -444,13 +451,12 @@ def dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime,
     return (xtp_dcf,npv)
 
 
-
-#Function calculates the technical dimension for infrastructure
-def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology, input_technology,
-                             efficiency, product_price, margincost_model, variable_cost, location, power_input,
-                             power_cost, power_price_series, efficiency_el,
+# Function calculates the technical dimension for infrastructure
+def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology,
+                             input_technology, efficiency, product_price, margincost_model, variable_cost, location,
+                             power_input, power_cost, power_price_series, efficiency_el,
                              efficiency_q, price_change, transport_pressure, capacity_1, capacity_2, capacity_3,
-                             share_input_wind, share_input_pv, min_storage_dimension_kg):
+                             share_input_wind, share_input_pv, min_storage_dimension_kg, storage_time):
 
     list_ptx = ["Power-to-X"]
     list_xtp = ["X-to-Power"]
@@ -460,29 +466,28 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
                                        margincost_model, variable_cost, location,
                                        power_input, power_price_series, price_change,
                                        share_input_wind, share_input_pv)
-        output1 = output_ptx['production'] #in MWh/h
+        output1 = output_ptx['production']  # in MWh/h
 
     elif ptx_technology in list_xtp:
         output_xtp = output_x_to_power(power_cost, power_technology, product_price, efficiency_el, efficiency_q,
                           margincost_model, variable_cost, price_change)
         output1 = output_xtp["input_product_demand"]
 
-    output = pd.DataFrame({"production": output1}) #in MWh/h
+    output = pd.DataFrame({"production": output1})  # in MWh/h
     output_kw = output['production']/1000
 
     # Umrechnung von kWh in kg der Produktions-Profile
     production_profile1 = output_kw / 33.3
-    #production_profile1 = demand_h2 * (1000/33.33)
+    # production_profile1 = demand_h2 * (1000/33.33)
     production_profile = pd.DataFrame({"production": production_profile1})
 
-    throughput = production_profile['production'].max()  #maximum throughput is design throughput of compressor und Pipeline Auslegung
+    throughput = production_profile['production'].max()  # maximum throughput is design throughput of compressor und Pipeline Auslegung
     throughput_m3 = throughput/0.09
     throughput_kw = output_kw.max()
 
-
     # wir brauchen trotzdem einen Speicher für den produzierten Wasserstoff (On-Site EL)
     if do_infrastructure == 'no':
-        storage_dimension = min_storage_dimension_kg
+        storage_dimension = throughput * storage_time
     else:
         if infrastructure_type == "Pipeline":
             storage_dimension = 0
@@ -496,19 +501,19 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             loading_time = 1.5
             speed = 50
             transport_time = 2 * (int(distance) / int(speed)) + 2 * (int(loading_time))
-            if production_profile['production'].sum() < 13 * capacity_1:
+            if production_profile['production'].sum() < 36 * capacity_1:
                 capacity = capacity_1
                 transport_pressure = 200
-            elif production_profile['production'].sum() < 13 * capacity_2:
+            elif production_profile['production'].sum() < 36 * capacity_2:
                 capacity = capacity_2
                 transport_pressure = 350
-            elif production_profile['production'].sum() < 13 * capacity_3:
+            elif production_profile['production'].sum() < 36 * capacity_3:
                 capacity = capacity_3
-                transport_pressure = 450
+                transport_pressure = 550
             else:
                 print("MAX CAPACITY REACHED -> AMOUNT OF YEARLY TOURS IS EXCEEDED")
                 capacity = capacity_3
-                transport_pressure = 450
+                transport_pressure = 550
             amount_tours_year = (production_profile['production'].sum())/capacity  # Angaben in kg
             interval_tours_hours = (8760/amount_tours_year) - transport_time  # alle x Stunden kommt eine Lieferung
             interval_tours_days = interval_tours_hours/24  # alle x tage kommt eine Lieferung
@@ -538,7 +543,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             storage_dimension_m3 = storage_dimension / 0.09
 
     return (amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length, throughput,
-            throughput_m3, throughput_kw)
+            throughput_m3, throughput_kw, capacity)
 
   # return (amount_trailer, storage_dimension, amount_storage, transport_pressure,
            # pipe_diameter, pipe_length, throughput)
@@ -547,33 +552,30 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 
 
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
-def infrastructure_dcf(ptx_technology, output_kw, do_infrastructure, infrastructure_type, distance, power_technology, input_technology,
-                       efficiency, product_price, margincost_model, variable_cost, location, power_input,
-                       power_cost, power_price_series, efficiency_el, efficiency_q,
-                       runtime, wacc, price_change, capex_trailer, capex_trailer_spez, capex_storage_euro_pro_kg,  capex_storagetank, transport_pressure,
-                       capacity, share_input_wind, share_input_pv, infrastructure):
+def infrastructure_dcf( do_infrastructure, infrastructure_type, runtime, wacc, capex_trailer_spez,
+                        capex_storage_euro_pro_kg, infrastructure):
 
     if do_infrastructure == 'no':
-        capex_storage = capex_storage_euro_pro_kg * infrastructure[2]
-        opex_storage = 0.02 * capex_storage
-        capex_compressor = CAPEX_COMPRESSOR_1 * infrastructure[8]
+        capex_storage = capex_storage_euro_pro_kg * infrastructure[1]
+        opex_storage = OPEX_STORAGE_RATE * capex_storage
+        capex_compressor = CAPEX_COMPRESSOR_1 * infrastructure[7]
     else:
         if infrastructure_type == "Pipeline":
-            if infrastructure[7] < GAS_FLOW_HOUR_1:
-                capex_pipe = CAPEX_PIPE_1 * infrastructure[5]
-            elif infrastructure[7] < GAS_FLOW_HOUR_2:
-                capex_pipe = CAPEX_PIPE_2 * infrastructure[5]
-            elif infrastructure[7] < GAS_FLOW_HOUR_3:
-                capex_pipe = CAPEX_PIPE_3 * infrastructure[5]
-            elif infrastructure[7] < GAS_FLOW_HOUR_4:
-                capex_pipe = CAPEX_PIPE_4 * infrastructure[5]
+            if infrastructure[6] < GAS_FLOW_HOUR_1:
+                capex_pipe = CAPEX_PIPE_1 * infrastructure[4]
+            elif infrastructure[6] < GAS_FLOW_HOUR_2:
+                capex_pipe = CAPEX_PIPE_2 * infrastructure[4]
+            elif infrastructure[6] < GAS_FLOW_HOUR_3:
+                capex_pipe = CAPEX_PIPE_3 * infrastructure[4]
+            elif infrastructure[6] < GAS_FLOW_HOUR_4:
+                capex_pipe = CAPEX_PIPE_4 * infrastructure[4]
             else:
                 print("MAX PIPELINE TO SMALL -> USING MAX PIPELINE")
-                capex_pipe = CAPEX_PIPE_4 * infrastructure[5]  # TODO: Was, wenn max. Pipeline zu klein
+                capex_pipe = CAPEX_PIPE_4 * infrastructure[4]  # TODO: Was, wenn max. Pipeline zu klein
             opex_pipe = OPEX_PIPE_RATE * capex_pipe
             # Druckreduktion in Pipeline für Endanwendung durch GDRMA alle 35 km. (Mind. 2)
-            gdrma_amount = math.ceil(infrastructure[5] / 35) if math.ceil(
-                infrastructure[5] / 35) > 2 else gdrma_amount = 2
+            gdrma_amount = math.ceil(infrastructure[4] / 35) if math.ceil(
+                infrastructure[4] / 35) > 2 else gdrma_amount = 2
             capex_gdrma = gdrma_amount * GDRMA
             capex_transport = capex_pipe + capex_gdrma
             opex_transport = opex_pipe
@@ -583,35 +585,41 @@ def infrastructure_dcf(ptx_technology, output_kw, do_infrastructure, infrastruct
             opex_liqu = 0
             capex_compressor = 0
             opex_compressor = 0
+
         if infrastructure_type == "Tubetrailer":
             capex_onsite_storage = infrastructure[2] * capex_storage_euro_pro_kg
-            opex_onsite_storage = capex_onsite_storage * 0.02
+            opex_onsite_storage = capex_onsite_storage * OPEX_STORAGE_RATE
             capex_storage = infrastructure[1] * capex_storage_euro_pro_kg
-            opex_storage = 0.02 * capex_storage
-            capex_tank = infrastructure[0] * capex_trailer_spez * capacity
-            capex_transport = capex_tank + CAPEX_TRUCK
-            opex_tank = 0.02 * capex_tank
-            opex_transport = opex_tank + OPEX_TRUCK
+            opex_storage = OPEX_STORAGE_RATE * capex_storage
             if infrastructure[3] == 200:
-                capex_compressor = CAPEX_COMPRESSOR_1 * infrastructure[8]
-                opex_compressor = OPEX_COMPRESSOR_RATE * capex_compressor
+                capex_compressor = CAPEX_COMPRESSOR_1
+                opex_compressor = OPEX_COMPRESSOR_1
+                capex_trailer = CAPEX_TRAILER_200bar
             elif infrastructure[3] == 350:
-                capex_compressor = CAPEX_COMPRESSOR_2 * infrastructure[8]
-                opex_compressor = OPEX_COMPRESSOR_RATE * capex_compressor
-            elif infrastructure[3] == 450:
-                capex_compressor = CAPEX_COMPRESSOR_3 * infrastructure[8]
-                opex_compressor = OPEX_COMPRESSOR_RATE * capex_compressor
+                capex_compressor = CAPEX_COMPRESSOR_1 + CAPEX_COMPRESSOR_2
+                opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2
+                capex_trailer = CAPEX_TRAILER_350bar
+            elif infrastructure[3] == 550:
+                capex_compressor = CAPEX_COMPRESSOR_1 + CAPEX_COMPRESSOR_2
+                opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2
+                capex_trailer = CAPEX_TRAILER_550bar
+            capex_transport = capex_trailer + CAPEX_TRUCK
+            opex_tank = OPEX_TRAILER_RATE * capex_trailer
+            opex_transport = opex_tank + OPEX_TRUCK
             capex_liqu = 0
             opex_liqu = 0
 
         if infrastructure_type == "LNG":
-            capex_tank = infrastructure[0] * capex_trailer_spez * capacity
+            capex_onsite_storage = infrastructure[2] * capex_storage_euro_pro_kg
+            opex_onsite_storage = capex_onsite_storage * OPEX_STORAGE_RATE
+            capex_storage = infrastructure[1] * capex_storage_euro_pro_kg
+            opex_storage = OPEX_STORAGE_RATE * capex_storage
+            capex_tank = infrastructure[0] * capex_trailer_spez * infrastructure[8]
             capex_transport = capex_tank + CAPEX_TRUCK
-            opex_tank = 0.02 * capex_tank
+            opex_tank = OPEX_TRAILER_RATE * capex_tank
             opex_transport = opex_tank + OPEX_TRUCK
-            capex_liqu = CAPEX_LIQU_EURO_PRO_KW * infrastructure[8]
+            capex_liqu = CAPEX_LIQU_EURO_PRO_KW * infrastructure[7]
             opex_liqu = OPEX_LIQU_RATE * capex_liqu
-            
             capex_compressor = 0
             opex_compressor = 0
 
