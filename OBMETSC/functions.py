@@ -52,13 +52,17 @@ OPEX_COMPRESSOR_2 = 0.02 * 450000
 
 CAPEX_LIQU_EURO_PRO_KW = 1405
 OPEX_LIQU_RATE = 0.04
-# amortization_liquifier = 30
+CAPEX_EVA_EURO_PRO_KG = 3000  # Euro pro kg pro Tag
+OPEX_EVA_RATE = 0.03
+CAPEX_PUMP_EURO_PRO_KG = 30000  # Euro pro kg pro Tag
+OPEX_PUMP_RATE = 0.03
 
 CAPEX_TRUCK = 175000
 OPEX_TRUCK = 0.12 * 175000
 # amortization_truck = 8
 # amortization_tank = 12
 # amortization_storage = 30
+
 
 # Function calculates the production profile for a renewable energy plant
 def output_power_production(input_technology : str, power_input, location, share_input_wind, share_input_pv):
@@ -101,8 +105,7 @@ def dcf_power_production(input_technology, power_input, capex_power, opex_power,
 
     output_pp = output_power_production(input_technology, power_input, location, share_input_wind, share_input_pv)
 
-
-    if math.isclose(power_cost, 0.0):#power_cost == 0:
+    if math.isclose(power_cost, 0.0):  # power_cost == 0:
         power_cost1 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         power_cost = power_cost1 * price_change
     else:
@@ -136,7 +139,6 @@ def dcf_power_production(input_technology, power_input, capex_power, opex_power,
     return (power_production_dcf,npv)
 
 
-
 # Function calculates the production profile for a Power-to-X plant
 def output_power_to_x(power_technology, input_technology, efficiency, product_price,
                       margincost_model, variable_cost, location, power_input,
@@ -159,10 +161,10 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
         if margincost_model == "yes":
             comparison_margincost1 = np.where(margincost['price'] < product_price, 1, 0)
             comparison_margincost2 = pd.DataFrame({'production': comparison_margincost1})
-           #here below and also in the other functions it is described that either the produced amount from RE is the
-           #limit, or the installed capacity of the plant. So if the RE production is greater than the installed power
-           #of the plant, then the power is chosen as the limit of the production (cf. max_power2) Otherwise the RE
-           #quantity is the limiting quantity (cf. max_power1).
+            # here below and also in the other functions it is described that either the produced amount from RE is the
+            # limit, or the installed capacity of the plant. So if the RE production is greater than the installed power
+            # of the plant, then the power is chosen as the limit of the production (cf. max_power2) Otherwise the RE
+            # quantity is the limiting quantity (cf. max_power1).
             max_power1 = np.where(output_pp <= power_technology, 1, 0)
             max_power2 = np.where(output_pp <= power_technology, 0, power_technology)
             max_power3 = pd.DataFrame({'production': max_power1})
@@ -339,14 +341,13 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     return (power_to_x_dcf,npv)
 
 
-
 # Function calculates the production profile for a X-to-Power plant
 def output_x_to_power(power_cost, power_price_series, power_technology,
                       product_price, efficiency_el, efficiency_q, margincost_model,
                       variable_cost, price_change):
     list1 = list(range(0, 8760))
 
-    if math.isclose(power_cost, 0.0):#power_cost == 0:
+    if math.isclose(power_cost, 0.0):  # power_cost == 0:
         marginrevenue1 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         marginrevenue = marginrevenue1 * price_change
     else:
@@ -359,7 +360,7 @@ def output_x_to_power(power_cost, power_price_series, power_technology,
     if margincost_model == "yes":
         comparison_margincost1 = np.where(marginrevenue['price'] > margincost, 1, 0)
         comparison_margincost = pd.DataFrame({'production': comparison_margincost1})
-        power_production1 = comparison_margincost['production'] * power_technology #* efficiency_el
+        power_production1 = comparison_margincost['production'] * power_technology  # * efficiency_el
         heat_production1 = comparison_margincost['production'] * power_technology * efficiency_q
         input_product_demand = comparison_margincost['production'] * power_technology / efficiency_el
         x_production = pd.DataFrame({"time": list1, "power_production": power_production1, "heat_production": heat_production1,
@@ -374,7 +375,6 @@ def output_x_to_power(power_cost, power_price_series, power_technology,
                                      "input_product_demand": input_product_demand['production']})
 
     return (x_production)
-
 
 
 # Function calculates the profitability (NPV and cash flows over runtime) for the designed X-to-Power plant
@@ -395,7 +395,7 @@ def dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime,
     list2 = list1.copy()
     list2[0:8760] = [int(power_cost) for i in list2[0:8760]]
 
-    if math.isclose(power_cost, 0.0):#power_cost is int(0):
+    if math.isclose(power_cost, 0.0):  # power_cost is int(0):
         power_cost3 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         power_cost2 = power_cost3 * price_change
     else:
@@ -481,7 +481,8 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
     # production_profile1 = demand_h2 * (1000/33.33)
     production_profile = pd.DataFrame({"production": production_profile1})
 
-    throughput = production_profile['production'].max()  # maximum throughput is design throughput of compressor und Pipeline Auslegung
+    throughput = production_profile['production'].max()
+    # maximum throughput is design throughput of compressor und Pipeline Auslegung
     throughput_m3 = throughput/0.09
     throughput_kw = output_kw.max()
 
@@ -517,7 +518,8 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             amount_tours_year = (production_profile['production'].sum())/capacity  # Angaben in kg
             interval_tours_hours = (8760/amount_tours_year) - transport_time  # alle x Stunden kommt eine Lieferung
             interval_tours_days = interval_tours_hours/24  # alle x tage kommt eine Lieferung
-            # Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte Belieferungsintervall speichern könne
+            # Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte
+            # Belieferungsintervall speichern könne
             onsite_storage = interval_tours_days * (throughput * 24)
             onsite_storage_m3 = onsite_storage / 0.09
 
@@ -535,7 +537,8 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             amount_tours_year = (production_profile['production'].sum()) / capacity  # Angaben in kg
             interval_tours_hours = (8760 / amount_tours_year) - transport_time  # alle x Stunden kommt eine Lieferung
             interval_tours_days = interval_tours_hours / 24  # alle x tage kommt eine Lieferung
-            # Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte Belieferungsintervall speichern könne
+            # Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte
+            # Belieferungsintervall speichern könne
             onsite_storage = interval_tours_days * (throughput * 24)
             onsite_storage_m3 = onsite_storage / 0.09
 
@@ -545,14 +548,14 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
     return (amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length, throughput,
             throughput_m3, throughput_kw, capacity)
 
-  # return (amount_trailer, storage_dimension, amount_storage, transport_pressure,
-           # pipe_diameter, pipe_length, throughput)
+    # return (amount_trailer, storage_dimension, amount_storage, transport_pressure, pipe_diameter, pipe_length,
+    # throughput)
 
-#return (interval_tours_in_days, Zwischenspeicher, storage dimension)
+# return (interval_tours_in_days, Zwischenspeicher, storage dimension)
 
 
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
-def infrastructure_dcf( do_infrastructure, infrastructure_type, runtime, wacc, capex_trailer_spez,
+def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, capex_trailer_spez,
                         capex_storage_euro_pro_kg, infrastructure):
 
     if do_infrastructure == 'no':
@@ -583,6 +586,10 @@ def infrastructure_dcf( do_infrastructure, infrastructure_type, runtime, wacc, c
             opex_storage = 0
             capex_liqu = 0
             opex_liqu = 0
+            capex_evaporator = 0
+            opex_evaporator = 0
+            capex_lh2_pump = 0
+            opex_lh2_pump = 0
             capex_compressor = 0
             opex_compressor = 0
 
@@ -608,6 +615,10 @@ def infrastructure_dcf( do_infrastructure, infrastructure_type, runtime, wacc, c
             opex_transport = opex_tank + OPEX_TRUCK
             capex_liqu = 0
             opex_liqu = 0
+            capex_evaporator = 0
+            opex_evaporator = 0
+            capex_lh2_pump = 0
+            opex_lh2_pump = 0
 
         if infrastructure_type == "LNG":
             capex_onsite_storage = infrastructure[2] * capex_storage_euro_pro_kg
@@ -620,6 +631,10 @@ def infrastructure_dcf( do_infrastructure, infrastructure_type, runtime, wacc, c
             opex_transport = opex_tank + OPEX_TRUCK
             capex_liqu = CAPEX_LIQU_EURO_PRO_KW * infrastructure[7]
             opex_liqu = OPEX_LIQU_RATE * capex_liqu
+            capex_evaporator = CAPEX_EVA_EURO_PRO_KG * (infrastructure[5] * 24)
+            opex_evaporator = OPEX_EVA_RATE * capex_evaporator
+            capex_lh2_pump = CAPEX_PUMP_EURO_PRO_KG * (infrastructure[5] * 24)
+            opex_lh2_pump = OPEX_PUMP_RATE * capex_lh2_pump
             capex_compressor = 0
             opex_compressor = 0
 
@@ -631,19 +646,19 @@ def infrastructure_dcf( do_infrastructure, infrastructure_type, runtime, wacc, c
     list4[-1] = (-1) * (opex_transport)
 
     list5 = list3.copy()
-    list5[0] = (-1) * (capex_compressor + capex_liqu)
-    list5[1:-1] = [((-1) * (opex_compressor + opex_liqu)) for i in list5[1:-1]]
-    list5[-1] = (-1) * (opex_compressor + opex_liqu)
+    list5[0] = (-1) * (capex_compressor + capex_liqu + capex_evaporator + capex_lh2_pump)
+    list5[1:-1] = [((-1) * (opex_compressor + opex_liqu + opex_evaporator + opex_lh2_pump)) for i in list5[1:-1]]
+    list5[-1] = (-1) * (opex_compressor + opex_liqu + opex_evaporator + opex_lh2_pump)
 
     list6 = list3.copy()
-    list6[0] = (-1) * (capex_storage)
-    list6[1:-1] = [((-1) * (opex_storage)) for i in list6[1:-1]]
-    list6[-1] = (-1) * (opex_storage)
+    list6[0] = (-1) * (capex_storage + capex_onsite_storage)
+    list6[1:-1] = [((-1) * (opex_storage + opex_onsite_storage)) for i in list6[1:-1]]
+    list6[-1] = (-1) * (opex_storage + opex_onsite_storage)
 
     infrastructure_dcf = pd.DataFrame({"year": list3, "expenditure_transport": list4,
-                                       "expenditure_compressor": list5, "expenditure_storage": list6})
+                                       "expenditure_conversion": list5, "expenditure_storage": list6})
     infrastructure_dcf['expenditure_total'] = infrastructure_dcf["expenditure_transport"] \
-                                              + infrastructure_dcf["expenditure_compressor"] \
+                                              + infrastructure_dcf["expenditure_conversion"] \
                                               + infrastructure_dcf["expenditure_storage"]
     x = 0
     npv_calc = list3

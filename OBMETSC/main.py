@@ -47,36 +47,40 @@ import matplotlib.pyplot as plt
 from functions import *
 from flask import Flask, render_template, request
 
-#the lists are necessary to make if-else-actions depending on the technology
+# the lists are necessary to make if-else-actions depending on the technology
 list_ptx = ["Power-to-X"] # Power-to-X technologies
 list_xtp = ["X-to-Power"] # X-to-Power technologies
 list_pp = ["PV", "Wind", "PV+Grid", "Wind+Grid", "Wind+PV"] # input-technologies, based on renewable power production
 
-#creats the webapp with a secret key
+# creats the webapp with a secret key
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Thisisasecret'
 
-#the app.route starts an index page which welcomes the user (compare: index.html)
+
+# the app.route starts an index page which welcomes the user (compare: index.html)
 @app.route('/')
 def index():
     return render_template("index.html")
 
-#the database page can be selected and gives back the background informations about the tool
+
+# the database page can be selected and gives back the background informations about the tool
 @app.route('/database')
 def database():
     return render_template("database.html")
 
-#app route that leads user to the tool input page
+
+# app route that leads user to the tool input page
 @app.route('/calculator', methods=['GET', 'POST'])
 def input():
     return render_template("input.html")
 
-#this app route shows the results of the tool and appears when you have submit the input
+
+# this app route shows the results of the tool and appears when you have submit the input
 @app.route('/output', methods=['GET', 'POST'])
 def get():
 
-#the following variables are getting the informations from the input.html page
-    #demand_h2 = float(request.form['h2_demand']) Angabe auf input.html page in kWh/a
+    # the following variables are getting the informations from the input.html page
+    # demand_h2 = float(request.form['h2_demand']) Angabe auf input.html page in kWh/a
     ptx_technology = str(request.form['ptx_technology'])
     capex_technology = float(request.form['capex_technology'])
     opex_technology = float(request.form['opex_technology'])
@@ -112,7 +116,7 @@ def get():
     min_storage_dimension_kwh = float(request.form['storage_dimension'])
     storage_time = float(request.form['storage_dimension'])
 
-#changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
+    # changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)
     price_change = 1 + power_price_change / 100  # turning input price_change (e.g. 5%) into decimal number (e.g. 1.05)
     EEG_expenditure = EEG_reduction  # price for MWh power, reduced with input
@@ -126,7 +130,7 @@ def get():
     share_input_pv = float(share_input_pv / 100)
     min_storage_dimension_kg = min_storage_dimension_kwh / 33.3
 
-    #the values are translated into the variables for the functions, efficiency is set as electrical efficiency
+    # the values are translated into the variables for the functions, efficiency is set as electrical efficiency
     capex_power_kw = capex_input
     opex_power_kw = float(opex_input/100)
     capex_technology_kw = capex_technology
@@ -134,11 +138,10 @@ def get():
     efficiency_el = float(efficiency_ele/100)
     efficiency_q = float(efficiency_th/100)
     efficiency = float(efficiency_ele/100)
-    #demand_h2_kw = float(demand_h2/8760)
-    #demand_h2_kg = float(demand_h2/33,3)
+    # demand_h2_kw = float(demand_h2/8760)
+    # demand_h2_kg = float(demand_h2/33,3)
 
-
-    #if input technology is "Grid", there is a zero set as default value for power input and location
+    # if input technology is "Grid", there is a zero set as default value for power input and location
     if input_technology == "Grid":
         power_input = 0
         location = 0
@@ -148,7 +151,6 @@ def get():
     opex_power = opex_power_kw * capex_power_kw * 1000
     capex_technology = capex_technology_kw * 1000
     opex_technology = opex_technology_kw * capex_technology_kw * 1000
-
 
     if infrastructure_type == "Tubetrailer":
         capacity_1 = 378  # kg bei 200 bar
@@ -170,10 +172,10 @@ def get():
     else:
         capex_storage_euro_pro_kg = 600
 
-    #the value "renewables" is a True/False-variable that is important for frontend-html: If renewables true, the renewable energy production is shown as a figure
+    # the value "renewables" is a True/False-variable that is important for frontend-html: If renewables true, the renewable energy production is shown as a figure
     renewables = False
     if ptx_technology == "Power-to-X":
-        if input_technology in list_pp:#if the input technology is a production plant, the output and dcf are calculated
+        if input_technology in list_pp:  # if the input technology is a production plant, the output and dcf are calculated
             renewables = True
             a = output_power_production(input_technology, power_input, location,
                                         share_input_wind, share_input_pv)
@@ -181,7 +183,7 @@ def get():
                                      runtime, location, power_cost, power_price_series, wacc, price_change,
                                      share_input_wind, share_input_pv)
 
-    #the output and DCF for a PtX Technology are calculated (for details: functions.py)
+    # the output and DCF for a PtX Technology are calculated (for details: functions.py)
         c = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
                               variable_cost, location, power_input, power_price_series, price_change,
                               share_input_wind, share_input_pv)
@@ -200,7 +202,7 @@ def get():
                                                                 EEG_expenditure, capex_decrease, opex_decrease,
                                                                 share_input_wind, share_input_pv))'''
 
-    #the output and DCF for a XtP Technology are calculated (for details: functions.py)
+    # the output and DCF for a XtP Technology are calculated (for details: functions.py)
     elif ptx_technology == "X-to-Power":
         e = output_x_to_power(power_cost, power_price_series, power_technology,
                               product_price, efficiency_el, efficiency_q,
@@ -216,10 +218,9 @@ def get():
     x = pd.DataFrame({"default": list1, "default": list1})
     h = [x, "default"]
     infrastructure = False
-    #storage dimension and costs should be calculated
+    # storage dimension and costs should be calculated
 
-
-    #if infrastructure should be dimensioned, the functions g and h are executed
+    # if infrastructure should be dimensioned, the functions g and h are executed
     if do_infrastructure == "yes":
         infrastructure = True
         g = infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology,
@@ -238,7 +239,7 @@ def get():
                                capex_storagetank, transport_pressure, capacity, opex_trailer, capex_liquifier,
                                opex_liquifier_rate, share_input_wind, share_input_pv, g)
 
-#a graphic is created from the power production profile
+# a graphic is created from the power production profile
     if input_technology in list_pp and ptx_technology in list_ptx:
         plt.figure(1)
         plt.plot('time', 'pv_production', data=a, marker='', color='skyblue', linewidth=1)
@@ -246,12 +247,12 @@ def get():
         plt.legend()
         plt.savefig('static/power_production_plot.png')
 
-
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], column_names1 = d[0].columns.values,
-                           row_data1 = list(d[0].values.tolist()),
+                           row_data1=list(d[0].values.tolist()),
                            renewables=renewables, ptx_technology=ptx_technology, column_names2 = h[0].columns.values,
-                           row_data2 = list(h[0].values.tolist()),
+                           row_data2=list(h[0].values.tolist()),
                            infrastructure=infrastructure, npv_infrastructure=h[1], zip = zip)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
