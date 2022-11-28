@@ -33,7 +33,6 @@ CAPEX_PIPE_2 = 400000  # (DN32/DP1)
 CAPEX_PIPE_3 = 850000  # (DN100/DP4)
 CAPEX_PIPE_4 = 950000  # (DN200/DP4)
 OPEX_PIPE_RATE = 0.04
-# amortization_pipelin = 40
 GDRMA = 77000  # €/Stück, eine Anlage alle 35 km, 400 m3/h
 # Netzanschluss = 20.000 #€/Netzanschluss
 
@@ -59,10 +58,22 @@ OPEX_PUMP_RATE = 0.03
 
 CAPEX_TRUCK = 175000
 OPEX_TRUCK = 0.12 * 175000
-# amortization_truck = 8
-# amortization_tank = 12
-# amortization_storage = 30
 
+AMORTIZATION_TRUCK = 8
+AMORTIZATION_TRAILER = 20
+AMORTIZATION_STORAGE = 30
+AMORTIZATION_COMPRESSOR = 15
+AMORTIZATION_LIQU = 20
+AMORTIZATION_EVA = 10
+AMORTIZATION_PUMP = 10
+AMORTIZATION_PIPE = 40
+AMORTIZATION_GDRMA = 45
+
+ENERGY_DEMAND_COMPRESSOR = 1  # kWh el pro kg H2
+ENERGY_DEMAND_LIQU = 7
+ENERGY_DEMAND_EVA = 0
+ENERGY_DEMAND_PUMP = 0
+ENERGY_DEMAND_GDRMA =
 
 # Function calculates the production profile for a renewable energy plant
 def output_power_production(input_technology : str, power_input, location, share_input_wind, share_input_pv):
@@ -517,7 +528,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
                 transport_pressure = 550
             amount_tours_year = (production_profile['production'].sum())/capacity  # Angaben in kg
             interval_tours_hours = (8760/amount_tours_year) - transport_time  # alle x Stunden kommt eine Lieferung
-            interval_tours_days = interval_tours_hours/24  # alle x tage kommt eine Lieferung
+            interval_tours_days = interval_tours_hours/24  # alle x Tage kommt eine Lieferung
             # Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte
             # Belieferungsintervall speichern könne
             onsite_storage = interval_tours_days * (throughput * 24)
@@ -525,6 +536,8 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 
             storage_dimension = capacity + min_storage_dimension_kg
             storage_dimension_m3 = storage_dimension / 0.09
+
+            energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()
 
         if infrastructure_type == "LNG":
             amount_trailer = 1
@@ -545,8 +558,10 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             storage_dimension = capacity + min_storage_dimension_kg
             storage_dimension_m3 = storage_dimension / 0.09
 
+            energy_demand_year = ENERGY_DEMAND_LIQU * production_profile['production'].sum()
+
     return (amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length, throughput,
-            throughput_m3, throughput_kw, capacity)
+            throughput_m3, throughput_kw, capacity, energy_demand_year)
 
     # return (amount_trailer, storage_dimension, amount_storage, transport_pressure, pipe_diameter, pipe_length,
     # throughput)
@@ -556,7 +571,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
 def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, capex_trailer_spez,
-                        capex_storage_euro_pro_kg, infrastructure):
+                        capex_storage_euro_pro_kg, power_cost, infrastructure):
 
     if do_infrastructure == 'no':
         capex_storage = capex_storage_euro_pro_kg * infrastructure[1]
@@ -598,17 +613,18 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, ca
             opex_onsite_storage = capex_onsite_storage * OPEX_STORAGE_RATE
             capex_storage = infrastructure[1] * capex_storage_euro_pro_kg
             opex_storage = OPEX_STORAGE_RATE * capex_storage
+            cost_energy_demand_year = infrastructure[4] * power_cost
             if infrastructure[3] == 200:
                 capex_compressor = CAPEX_COMPRESSOR_1
-                opex_compressor = OPEX_COMPRESSOR_1
+                opex_compressor = OPEX_COMPRESSOR_1 + cost_energy_demand_year
                 capex_trailer = CAPEX_TRAILER_200bar
             elif infrastructure[3] == 350:
                 capex_compressor = CAPEX_COMPRESSOR_1 + CAPEX_COMPRESSOR_2
-                opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2
+                opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2 + cost_energy_demand_year
                 capex_trailer = CAPEX_TRAILER_350bar
             elif infrastructure[3] == 550:
                 capex_compressor = CAPEX_COMPRESSOR_1 + CAPEX_COMPRESSOR_2
-                opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2
+                opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2 + cost_energy_demand_year
                 capex_trailer = CAPEX_TRAILER_550bar
             capex_transport = capex_trailer + CAPEX_TRUCK
             opex_tank = OPEX_TRAILER_RATE * capex_trailer
@@ -629,14 +645,16 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, ca
             capex_transport = capex_tank + CAPEX_TRUCK
             opex_tank = OPEX_TRAILER_RATE * capex_tank
             opex_transport = opex_tank + OPEX_TRUCK
+            cost_energy_demand_year = infrastructure[4] * power_cost
             capex_liqu = CAPEX_LIQU_EURO_PRO_KW * infrastructure[7]
-            opex_liqu = OPEX_LIQU_RATE * capex_liqu
+            opex_liqu = OPEX_LIQU_RATE * capex_liqu + cost_energy_demand_year
             capex_evaporator = CAPEX_EVA_EURO_PRO_KG * (infrastructure[5] * 24)
             opex_evaporator = OPEX_EVA_RATE * capex_evaporator
             capex_lh2_pump = CAPEX_PUMP_EURO_PRO_KG * (infrastructure[5] * 24)
             opex_lh2_pump = OPEX_PUMP_RATE * capex_lh2_pump
             capex_compressor = 0
             opex_compressor = 0
+
 
     list3 = list(range(0, runtime + 1))
 
@@ -645,6 +663,9 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, ca
     list4[1:-1] = [((-1) * (opex_transport)) for i in list4[1:-1]]
     list4[-1] = (-1) * (opex_transport)
 
+    # hier soll rein, dass nach X Jahren Komponenten ausgetauscht werden müssen und entsprechend die CaPex nach X Jahren
+    # erneut anfallen
+    # Jährliche Energiekosten solln in einer Spalte angezeigt werden oder zu den Kosten in Liste 5 addiert werden
     list5 = list3.copy()
     list5[0] = (-1) * (capex_compressor + capex_liqu + capex_evaporator + capex_lh2_pump)
     list5[1:-1] = [((-1) * (opex_compressor + opex_liqu + opex_evaporator + opex_lh2_pump)) for i in list5[1:-1]]

@@ -159,10 +159,10 @@ def get():
         capex_storage_euro_pro_kg = 500
 
     elif infrastructure_type == "LNG":
-        capex_trailer_spez = 212
+        capex_trailer_spez = 200
         capacity = 4300
         transport_lost_day = 0.015
-        capex_storage_euro_pro_kg = 105
+        capex_storage_euro_pro_kg = 40
 
     elif infrastructure_type == "Pipeline":
         capex_trailer = 0
