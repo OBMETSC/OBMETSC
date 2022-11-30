@@ -497,34 +497,41 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
                                        margincost_model, variable_cost, location,
                                        power_input, power_price_series, price_change,
                                        share_input_wind, share_input_pv)
-        output1 = output_ptx['production']
+        output1 = output_ptx['production']  # in MWh/h
 
     elif ptx_technology in list_xtp:
         output_xtp = output_x_to_power(power_cost, power_technology, product_price, efficiency_el, efficiency_q,
                           margincost_model, variable_cost, price_change)
         output1 = output_xtp["input_product_demand"]
 
-    output = pd.DataFrame({"production": output1})
+    output = pd.DataFrame({"production": output1})  # in MWh/h
+    output_kw = output['production'] * 1000
 
     # Umrechnung von MWh in kg der Produktions-Profile
-    production_profile1 = output['production'] * (1000/33.33)
+    production_profile1 = output_kw/33.33
     production_profile = pd.DataFrame({"production": production_profile1})
 
     throughput = production_profile['production'].max()  # maximum throughput is design throughput of compressor
 
     # maximum throughput is design throughput of compressor und Pipeline Auslegung
     throughput_m3 = throughput/0.09
-    throughput_kw = throughput * 33.33
+    throughput_kw = output_kw.max()
 
     # wir brauchen trotzdem einen Speicher für den produzierten Wasserstoff (On-Site EL)
     if do_infrastructure == 'no':
-        storage_dimension = throughput * storage_time
+        if storage_time > 0:
+            storage_dimension = throughput * storage_time  # wenn storage_time == 0 -> storage_dimension = 0
+        else:
+            storage_dimension = 0
         amount_trailer = 0
         onsite_storage = 0
         transport_pressure = 0
         pipe_length = 0
         capacity = 0
-        energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()
+        if storage_dimension > 0:
+            energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()  # only if storage_dimension > 0
+        else:
+            energy_demand_year = 0
     else:
         if infrastructure_type == "Pipeline":
             storage_dimension = 0
@@ -541,13 +548,13 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             loading_time = 1.5
             speed = 50
             transport_time = 2 * (int(distance) / int(speed)) + 2 * (int(loading_time))
-            if production_profile['production'].sum() < 12 * CAPACITY_TUBETRAILER_1:
+            if production_profile['production'].sum() < 36 * CAPACITY_TUBETRAILER_1:
                 capacity = CAPACITY_TUBETRAILER_1
                 transport_pressure = 200
-            elif production_profile['production'].sum() < 12 * CAPACITY_TUBETRAILER_2:
+            elif production_profile['production'].sum() < 36 * CAPACITY_TUBETRAILER_2:
                 capacity = CAPACITY_TUBETRAILER_1
                 transport_pressure = 350
-            elif production_profile['production'].sum() < 12 * CAPACITY_TUBETRAILER_3:
+            elif production_profile['production'].sum() < 36 * CAPACITY_TUBETRAILER_3:
                 capacity = CAPACITY_TUBETRAILER_3
                 transport_pressure = 550
             else:

@@ -110,9 +110,8 @@ def get():
     product_price = float(request.form['product_price'])
     runtime = int(request.form['runtime'])
     do_infrastructure = str(request.form['do_infrastructure'])
-    # do_storage = "yes"  # str(request.form['do_storage'])
-    min_storage_dimension_kwh = 20000  # float(request.form['storage_dimension'])
-    storage_time = 240  # float(request.form['storage_dimension'])
+    min_storage_dimension_kwh = 20000  # float(request.form['storage_dimension']) # mit Anmerkung: If Infrastructure is includes, give a Minimum Storeage Dimension. Put 0 for no min. Storage need.
+    storage_time = 240  # float(request.form['storage_dimension']) # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in hours
 
     # changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)
