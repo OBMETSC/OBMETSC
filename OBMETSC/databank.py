@@ -17,7 +17,7 @@ import pandas as pd
 #import the cost data for power supply and heat supply
 def get_price_series(power_price_series):
     electricity_cost_data = pd.read_csv(
-        "databank/Strom_Kosten_" + power_price_series + ".csv")  # change year and type for other series
+        f"databank/Strom_Kosten_{power_price_series}.csv")  # change year and type for other series
     return electricity_cost_data
 
 heat_cost_data = pd.read_csv("databank/Heat_Kosten_2020.csv")

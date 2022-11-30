@@ -40,7 +40,6 @@ Joachim Müller-Kirchenbauer
 """
 
 
-import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -80,7 +79,6 @@ def input():
 def get():
 
     # the following variables are getting the informations from the input.html page
-    # demand_h2 = float(request.form['h2_demand']) Angabe auf input.html page in kWh/a
     ptx_technology = str(request.form['ptx_technology'])
     capex_technology = float(request.form['capex_technology'])
     opex_technology = float(request.form['opex_technology'])
@@ -91,7 +89,7 @@ def get():
     capex_input = float(request.form['capex_input'])
     opex_input = float(request.form['opex_input'])
     power_cost = float(request.form['power_cost'])
-    power_price_series = str(request.form['pp_series'])
+    power_price_series = "2021"  # str(request.form['pp_series'])
     heat_cost = float(request.form['heat_cost'])
     margincost_model = str(request.form['margincost_model'])
     input_technology = str(request.form['input_technology'])
@@ -112,9 +110,9 @@ def get():
     product_price = float(request.form['product_price'])
     runtime = int(request.form['runtime'])
     do_infrastructure = str(request.form['do_infrastructure'])
-    do_storage = str(request.form['do_storage'])
-    min_storage_dimension_kwh = float(request.form['storage_dimension'])
-    storage_time = float(request.form['storage_dimension'])
+    # do_storage = "yes"  # str(request.form['do_storage'])
+    min_storage_dimension_kwh = 20000  # float(request.form['storage_dimension'])
+    storage_time = 240  # float(request.form['storage_dimension'])
 
     # changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)
@@ -151,26 +149,6 @@ def get():
     opex_power = opex_power_kw * capex_power_kw * 1000
     capex_technology = capex_technology_kw * 1000
     opex_technology = opex_technology_kw * capex_technology_kw * 1000
-
-    if infrastructure_type == "Tubetrailer":
-        capacity_1 = 378  # kg bei 200 bar
-        capacity_2 = 774  # kg bei 350 bar
-        capacity_3 = 1100  # kg bei 500 bar -> 618 € pro kg
-        capex_storage_euro_pro_kg = 500
-
-    elif infrastructure_type == "LNG":
-        capex_trailer_spez = 200
-        capacity = 4300
-        transport_lost_day = 0.015
-        capex_storage_euro_pro_kg = 40
-
-    elif infrastructure_type == "Pipeline":
-        capex_trailer = 0
-        opex_trailer = 0
-        capacity = 0
-        capex_storage_euro_pro_kg = 0
-    else:
-        capex_storage_euro_pro_kg = 600
 
     # the value "renewables" is a True/False-variable that is important for frontend-html: If renewables true, the renewable energy production is shown as a figure
     renewables = False
@@ -221,23 +199,17 @@ def get():
     # storage dimension and costs should be calculated
 
     # if infrastructure should be dimensioned, the functions g and h are executed
-    if do_infrastructure == "yes":
-        infrastructure = True
-        g = infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology,
+
+    infrastructure = True
+    g = infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology,
                                      input_technology, efficiency, product_price, margincost_model,
                                      variable_cost, location,
                                      power_input, power_cost, power_price_series,
-                                     efficiency_el, efficiency_q, price_change, transport_pressure,
-                                     capacity, share_input_wind, share_input_pv)
+                                     efficiency_el, efficiency_q, price_change,
+                                     share_input_wind, share_input_pv,
+                                     min_storage_dimension_kg, storage_time)
 
-        h = infrastructure_dcf(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology,
-                               input_technology, efficiency, product_price, margincost_model, variable_cost, location,
-                               power_input, power_cost, power_price_series,
-                               efficiency_el, efficiency_q, runtime, wacc, price_change,
-                               CAPEX_COMPRESSOR_1, CAPEX_COMPRESSOR_2, OPEX_COMPRESSOR_RATE,
-                               CAPEX_PIPE_1, CAPEX_PIPE_2, CAPEX_PIPE_3, OPEX_PIPE_RATE, capex_trailer, capex_storage_euro_pro_kg,
-                               capex_storagetank, transport_pressure, capacity, opex_trailer, capex_liquifier,
-                               opex_liquifier_rate, share_input_wind, share_input_pv, g)
+    h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
 
 # a graphic is created from the power production profile
     if input_technology in list_pp and ptx_technology in list_ptx:
