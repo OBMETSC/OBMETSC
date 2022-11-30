@@ -111,7 +111,7 @@ def get():
     runtime = int(request.form['runtime'])
     do_infrastructure = str(request.form['do_infrastructure'])
     min_storage_dimension_kwh = 20000  # float(request.form['storage_dimension']) # mit Anmerkung: If Infrastructure is includes, give a Minimum Storeage Dimension. Put 0 for no min. Storage need.
-    storage_time = 240  # float(request.form['storage_dimension']) # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in hours
+    storage_time_days = 24  # float(request.form['storage_dimension']) # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in days
 
     # changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)
@@ -126,6 +126,7 @@ def get():
     share_input_wind = float(share_input_wind / 100)
     share_input_pv = float(share_input_pv / 100)
     min_storage_dimension_kg = min_storage_dimension_kwh / 33.3
+    storage_time_hour = storage_time_days * 24
 
     # the values are translated into the variables for the functions, efficiency is set as electrical efficiency
     capex_power_kw = capex_input
@@ -135,8 +136,6 @@ def get():
     efficiency_el = float(efficiency_ele/100)
     efficiency_q = float(efficiency_th/100)
     efficiency = float(efficiency_ele/100)
-    # demand_h2_kw = float(demand_h2/8760)
-    # demand_h2_kg = float(demand_h2/33,3)
 
     # if input technology is "Grid", there is a zero set as default value for power input and location
     if input_technology == "Grid":
@@ -156,6 +155,7 @@ def get():
             renewables = True
             a = output_power_production(input_technology, power_input, location,
                                         share_input_wind, share_input_pv)
+            sum_renewables = a["pv_production"].sum() + a["wind_production"].sum()
             b = dcf_power_production(input_technology, power_input, capex_power, opex_power,
                                      runtime, location, power_cost, power_price_series, wacc, price_change,
                                      share_input_wind, share_input_pv)
@@ -164,7 +164,14 @@ def get():
         c = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
                               variable_cost, location, power_input, power_price_series, price_change,
                               share_input_wind, share_input_pv)
+        sum_ptx = c["production"].sum()
         d = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
+                           power_cost, power_price_series, variable_cost, product_price,
+                           input_technology, power_input, capex_power,
+                           opex_power, efficiency, margincost_model, location, wacc, price_change,
+                           regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                           share_input_wind, share_input_pv)
+        sensitivity(power_technology, capex_technology, opex_technology, runtime,
                            power_cost, power_price_series, variable_cost, product_price,
                            input_technology, power_input, capex_power,
                            opex_power, efficiency, margincost_model, location, wacc, price_change,
@@ -206,7 +213,7 @@ def get():
                                      power_input, power_cost, power_price_series,
                                      efficiency_el, efficiency_q, price_change,
                                      share_input_wind, share_input_pv,
-                                     min_storage_dimension_kg, storage_time)
+                                     min_storage_dimension_kg, storage_time_hour)
 
     h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
 
@@ -218,8 +225,8 @@ def get():
         plt.legend()
         plt.savefig('static/power_production_plot.png')
 
-    return render_template('output.html', runtime=runtime, npv_ptx=d[1], column_names1 = d[0].columns.values,
-                           row_data1=list(d[0].values.tolist()),
+    return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, column_names1 = d[0].columns.values,
+                           row_data1=list(d[0].values.tolist()), sum_renewables=sum_renewables,
                            renewables=renewables, ptx_technology=ptx_technology, column_names2 = h[0].columns.values,
                            row_data2=list(h[0].values.tolist()),
                            infrastructure=infrastructure, npv_infrastructure=h[1], zip = zip)

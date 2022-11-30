@@ -21,7 +21,10 @@ SPDX-License-Identifier: MIT
 import numpy as np
 import pandas as pd
 import math
+import matplotlib.pyplot as plt
 from databank import *
+
+
 #gas_flow_hour in m3/h für die unterschiedlichen Pipelines im VNB
 GAS_FLOW_HOUR_1 = 49.89
 GAS_FLOW_HOUR_2 = 81.73
@@ -114,12 +117,12 @@ def output_power_production(input_technology : str, power_input, location, share
 
     elif input_technology == "PV" or input_technology == "PV+Grid":
         production_pv = power_input * pd.DataFrame(dict_ort[location][0], columns=['electricity'])
-        production_wind = power_input * pd.DataFrame(list1, columns=['electricity'])
+        production_wind = power_input * pd.DataFrame(list1, columns=['electricity'])  # hier sind alle Werte in der Liste 0
     elif input_technology == "Wind" or input_technology == "Wind+Grid":
         production_wind = power_input * pd.DataFrame(dict_ort[location][1], columns=['electricity'])
-        production_pv = power_input * pd.DataFrame(list1, columns=['electricity'])
+        production_pv = power_input * pd.DataFrame(list1, columns=['electricity'])  # hier sind alle Werte in der Liste 0
 
-    power_production = pd.DataFrame({"time":list2, "pv_production": production_pv['electricity'], "wind_production": production_wind['electricity']})
+    power_production = pd.DataFrame({"time": list2, "pv_production": production_pv['electricity'], "wind_production": production_wind['electricity']})
 
     return (power_production)
 
@@ -369,7 +372,7 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
 
     npv = sum(npv_calc)
 
-    return (power_to_x_dcf,npv)
+    return power_to_x_dcf, npv
 
 
 # Function calculates the production profile for a X-to-Power plant
@@ -771,4 +774,44 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
         x += 1
     npv = sum(npv_calc)
 
-    return (infrastructure_dcf, npv)
+    return infrastructure_dcf, npv
+
+
+def sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
+                   variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
+                   efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease,
+                   share_input_wind, share_input_pv):
+    output = {"capex_technology": [], "opex_technology": [], "power_cost": [], "variable_cost": []}
+    for x in range(20):
+        factor = x/10
+        _, npv = dcf_power_to_x(power_technology, capex_technology * factor, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, input_technology, power_input,
+                                capex_power, opex_power, efficiency, margincost_model, location, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                share_input_wind, share_input_pv)
+        output["capex_technology"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology * factor, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, input_technology, power_input,
+                                capex_power, opex_power, efficiency, margincost_model, location, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                share_input_wind, share_input_pv)
+        output["opex_technology"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost * factor,
+                                power_price_series, variable_cost, product_price, input_technology, power_input,
+                                capex_power, opex_power, efficiency, margincost_model, location, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                share_input_wind, share_input_pv)
+        output["power_cost"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost * factor, product_price, input_technology, power_input,
+                                capex_power, opex_power, efficiency, margincost_model, location, wacc,
+                                price_change, regulations_grid_expenditure, EEG_expenditure, capex_decrease,
+                                opex_decrease, share_input_wind, share_input_pv)
+        output["variable_cost"].append(npv)
+
+    for name, values in output.items():
+        plt.plot(values, label=name)
+    plt.legend()
+    plt.savefig("static/sensitivity_plot.png")
+    plt.close()
