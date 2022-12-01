@@ -99,7 +99,7 @@ ENERGY_DEMAND_PUMP = 0
 
 
 # Function calculates the production profile for a renewable energy plant
-def output_power_production(input_technology : str, power_input, location, share_input_wind, share_input_pv):
+def output_power_production(input_technology: str, power_input, location, share_input_wind, share_input_pv):
     input_technology = str(input_technology)
     power_input = float(power_input)
     location = str(location)
@@ -109,11 +109,11 @@ def output_power_production(input_technology : str, power_input, location, share
 
     list2 = list(range(0, 8760))
 
-    if input_technology == "Wind+PV":
+    if input_technology == "Wind+PV":  # TODO Einheiten: - * MWel * kwh ???
         production_pv = share_input_pv * power_input * \
                         pd.DataFrame(dict_ort[location][0], columns=['electricity'])
         production_wind = share_input_wind * power_input * \
-                          pd.DataFrame(dict_ort[location][1], columns=['electricity'])
+                        pd.DataFrame(dict_ort[location][1], columns=['electricity'])
 
     elif input_technology == "PV" or input_technology == "PV+Grid":
         production_pv = power_input * pd.DataFrame(dict_ort[location][0], columns=['electricity'])
@@ -275,7 +275,7 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
                 {"time": list1, "production": x_production3['production'], "renewable_demand": re_demand,
                  "grid_demand": grid_demand['grid_demand'],"power_production": list2})
 
-    return (x_production)
+    return x_production
 
 
 # Function calculates the profitability (NPV and cash flows over runtime) for the designed Power-to-X plant
@@ -408,7 +408,7 @@ def output_x_to_power(power_cost, power_price_series, power_technology,
         x_production = pd.DataFrame({"time": list1, "power_production": power_production, "heat_production": heat_production,
                                      "input_product_demand": input_product_demand['production']})
 
-    return (x_production)
+    return x_production
 
 
 # Function calculates the profitability (NPV and cash flows over runtime) for the designed X-to-Power plant
@@ -482,7 +482,7 @@ def dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime,
         x += 1
     npv = sum(npv_calc)
 
-    return (xtp_dcf,npv)
+    return xtp_dcf, npv
 
 
 # Function calculates the technical dimension for infrastructure
