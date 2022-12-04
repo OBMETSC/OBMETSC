@@ -47,9 +47,9 @@ from functions import *
 from flask import Flask, render_template, request
 
 # the lists are necessary to make if-else-actions depending on the technology
-list_ptx = ["Power-to-X"] # Power-to-X technologies
-list_xtp = ["X-to-Power"] # X-to-Power technologies
-list_pp = ["PV", "Wind", "PV+Grid", "Wind+Grid", "Wind+PV"] # input-technologies, based on renewable power production
+list_ptx = ["Power-to-X"]  # Power-to-X technologies
+list_xtp = ["X-to-Power"]  # X-to-Power technologies
+list_pp = ["PV", "Wind", "PV+Grid", "Wind+Grid", "Wind+PV"]  # input-technologies, based on renewable power production
 
 # creats the webapp with a secret key
 app = Flask(__name__)
@@ -79,48 +79,48 @@ def input():
 def get():
 
     # the following variables are getting the informations from the input.html page
-    ptx_technology = str(request.form['ptx_technology'])
-    capex_technology = float(request.form['capex_technology'])
-    opex_technology = float(request.form['opex_technology'])
-    variable_cost = float(request.form['variable_cost'])
-    efficiency_ele = float(request.form['efficiency_ele'])
-    efficiency_th = float(request.form['efficiency_th'])
-    power_technology = float(request.form['power_technology'])
-    capex_input = float(request.form['capex_input'])
-    opex_input = float(request.form['opex_input'])
-    power_cost = float(request.form['power_cost'])
+    ptx_technology = str(request.form['ptx_technology'])  # ptx /xtp
+    capex_technology = float(request.form['capex_technology'])  # inv. Costs €/kW ptx-Anlage
+    opex_technology = float(request.form['opex_technology'])  # Yearly Operational Cost (% of Investment Cost) ptx
+    variable_cost = float(request.form['variable_cost'])  # Variable Costs (EUR/MWh) ptx
+    efficiency_ele = float(request.form['efficiency_ele'])  # Electrical Overall-Efficiency of the system (in %)
+    efficiency_th = float(request.form['efficiency_th'])  # ONLY xtp: Thermal Overall-Efficiency of the system (in %)
+    power_technology = float(request.form['power_technology'])  # installierte Leistung ptx-Anlage MWel
+    capex_input = float(request.form['capex_input'])  # Investment Cost (EUR/kW)
+    opex_input = float(request.form['opex_input'])  # Yearly Operational Cost (% of Investment Cost)
+    power_cost = float(request.form['power_cost'])  # PtX Power Price / XtP Energy Carrier Sales Price (EUR/MWh)
     power_price_series = "2021"  # str(request.form['pp_series'])
-    heat_cost = float(request.form['heat_cost'])
-    margincost_model = str(request.form['margincost_model'])
-    input_technology = str(request.form['input_technology'])
-    power_input = float(request.form['power_input'])
-    share_input_wind = float(request.form['share_input_wind'])
-    share_input_pv = float(request.form['share_input_pv'])
-    location = str(request.form['location'])
-    power_price_change = float(request.form['power_price_change'])
+    heat_cost = float(request.form['heat_cost'])  # Heat Sales Price
+    margincost_model = str(request.form['margincost_model'])  # Cost-managed Operation (yes/no)
+    input_technology = str(request.form['input_technology'])  # Power Input Technology
+    power_input = float(request.form['power_input'])  # Installed Capacity (MWel)
+    share_input_wind = float(request.form['share_input_wind'])  # Share of Wind in combined case (in %)
+    share_input_pv = float(request.form['share_input_pv'])  # Share of PV in combined case (in %):
+    location = str(request.form['location'])  # Plant Location (Federal State)
+    power_price_change = float(request.form['power_price_change'])  # Adjustment of Power Cost Time Series (in %)
     infrastructure_type = str(request.form['infrastructure_type'])
-    distance = float(request.form['distance'])
-    EEG_reduction = float(request.form['EEG_reduction'])
-    stromsteuer_reduction = float(request.form['stromsteuer_reduction'])
-    KWKG_reduction = float(request.form['KWKG_reduction'])
-    netzentgelte_reduction = float(request.form['netzentgelte_reduction'])
-    capex_subvention = float(request.form['capex_subvention'])
-    opex_subvention = float(request.form['opex_subvention'])
-    wacc_input = float(request.form['wacc_input'])
-    product_price = float(request.form['product_price'])
-    runtime = int(request.form['runtime'])
+    distance = float(request.form['distance'])  # km
+    EEG_reduction = float(request.form['EEG_reduction'])  # €/MWh
+    stromsteuer_reduction = float(request.form['stromsteuer_reduction'])  # €/MWh
+    KWKG_reduction = float(request.form['KWKG_reduction'])  # €/MWh
+    netzentgelte_reduction = float(request.form['netzentgelte_reduction'])  # €/MWh
+    capex_subvention = float(request.form['capex_subvention'])  # %
+    opex_subvention = float(request.form['opex_subvention'])  # %
+    wacc_input = float(request.form['wacc_input'])  # %
+    product_price = float(request.form['product_price'])  # PtX Energy Carrier Sales Price / XtP Energy Carrier Input Price (EUR/MWh)
+    runtime = int(request.form['runtime'])  # Lifetime in Years
     do_infrastructure = str(request.form['do_infrastructure'])
-    min_storage_dimension_kwh = 20000  # float(request.form['storage_dimension']) # mit Anmerkung: If Infrastructure is includes, give a Minimum Storeage Dimension. Put 0 for no min. Storage need.
-    storage_time_days = 24  # float(request.form['storage_dimension']) # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in days
+    min_storage_dimension_kwh = 2000  # float(request.form['storage_dimension']) # mit Anmerkung: If Infrastructure is includes, give a Minimum Storeage Dimension. Put 0 for no min. Storage need.
+    storage_time_days = 7  # float(request.form['storage_dimension']) # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in days
 
     # changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)
     price_change = 1 + power_price_change / 100  # turning input price_change (e.g. 5%) into decimal number (e.g. 1.05)
     EEG_expenditure = EEG_reduction  # price for MWh power, reduced with input
-    stromsteuer_expenditure = stromsteuer_reduction
-    KWKG_expenditure = KWKG_reduction
+    stromsteuer_expenditure = stromsteuer_reduction  # €/MWh
+    KWKG_expenditure = KWKG_reduction  # €/MWh
     netzentgelte_expenditure = netzentgelte_reduction  # sum of expenditure from StromNEV, Offshore, Abschaltbare Anlagen, Konzession
-    regulations_grid_expenditure = stromsteuer_expenditure + KWKG_expenditure + netzentgelte_expenditure
+    regulations_grid_expenditure = stromsteuer_expenditure + KWKG_expenditure + netzentgelte_expenditure  # €/MWh
     capex_decrease = float(1 - (capex_subvention / 100))
     opex_decrease = float(1 - (opex_subvention / 100))
     share_input_wind = float(share_input_wind / 100)
@@ -129,13 +129,14 @@ def get():
     storage_time_hour = storage_time_days * 24
 
     # the values are translated into the variables for the functions, efficiency is set as electrical efficiency
-    capex_power_kw = capex_input
+    capex_power_kw = capex_input  # €/kW
     opex_power_kw = float(opex_input/100)
-    capex_technology_kw = capex_technology
+    capex_technology_kw = capex_technology  # €/kW
     opex_technology_kw = float(opex_technology/100)
     efficiency_el = float(efficiency_ele/100)
     efficiency_q = float(efficiency_th/100)
     efficiency = float(efficiency_ele/100)
+    # power_input = float(power_input) * 1000  # MWel in kW
 
     # if input technology is "Grid", there is a zero set as default value for power input and location
     if input_technology == "Grid":
@@ -226,7 +227,7 @@ def get():
         plt.savefig('static/power_production_plot.png')
 
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, column_names1 = d[0].columns.values,
-                           row_data1=list(d[0].values.tolist()), sum_renewables=sum_renewables,
+                           row_data1=list(d[0].values.tolist()), sum_renewables= sum_renewables,
                            renewables=renewables, ptx_technology=ptx_technology, column_names2 = h[0].columns.values,
                            row_data2=list(h[0].values.tolist()),
                            infrastructure=infrastructure, npv_infrastructure=h[1], zip = zip)

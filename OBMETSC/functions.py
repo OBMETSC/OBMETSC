@@ -101,7 +101,7 @@ ENERGY_DEMAND_PUMP = 0
 # Function calculates the production profile for a renewable energy plant
 def output_power_production(input_technology: str, power_input, location, share_input_wind, share_input_pv):
     input_technology = str(input_technology)
-    power_input = float(power_input)
+    power_input = float(power_input)  # MWel
     location = str(location)
 
     list1 = list(range(0, 8760))
@@ -111,20 +111,21 @@ def output_power_production(input_technology: str, power_input, location, share_
 
     if input_technology == "Wind+PV":  # TODO Einheiten: - * MWel * kwh ???
         production_pv = share_input_pv * power_input * \
-                        pd.DataFrame(dict_ort[location][0], columns=['electricity'])
+                        (pd.DataFrame(dict_ort[location][0], columns=['electricity']) * 1000)
         production_wind = share_input_wind * power_input * \
-                        pd.DataFrame(dict_ort[location][1], columns=['electricity'])
+                        (pd.DataFrame(dict_ort[location][1], columns=['electricity']) * 1000)
 
     elif input_technology == "PV" or input_technology == "PV+Grid":
-        production_pv = power_input * pd.DataFrame(dict_ort[location][0], columns=['electricity'])
-        production_wind = power_input * pd.DataFrame(list1, columns=['electricity'])  # hier sind alle Werte in der Liste 0
+        production_pv = power_input * (pd.DataFrame(dict_ort[location][0], columns=['electricity']) * 1000)
+        production_wind = power_input * pd.DataFrame(list1, columns=['electricity'])  # alle Werte in der Liste 0
     elif input_technology == "Wind" or input_technology == "Wind+Grid":
-        production_wind = power_input * pd.DataFrame(dict_ort[location][1], columns=['electricity'])
-        production_pv = power_input * pd.DataFrame(list1, columns=['electricity'])  # hier sind alle Werte in der Liste 0
+        production_wind = power_input * (pd.DataFrame(dict_ort[location][1], columns=['electricity']) * 1000)
+        production_pv = power_input * pd.DataFrame(list1, columns=['electricity'])  # alle Werte in der Liste sind 0
 
-    power_production = pd.DataFrame({"time": list2, "pv_production": production_pv['electricity'], "wind_production": production_wind['electricity']})
+    power_production = pd.DataFrame({"time": list2, "pv_production": production_pv['electricity'],
+                                     "wind_production": production_wind['electricity']})
 
-    return (power_production)
+    return power_production
 
 
 # Function calculates the profitability (NPV and cash flows over runtime) for the designed RE plant
@@ -170,7 +171,7 @@ def dcf_power_production(input_technology, power_input, capex_power, opex_power,
         x += 1
     npv = sum(npv_calc)
 
-    return (power_production_dcf,npv)
+    return power_production_dcf, npv
 
 
 # Function calculates the production profile for a Power-to-X plant
@@ -338,8 +339,8 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     list3 = list(range(0, runtime + 1))
 
     list4 = list3.copy()
-    list4 = [((-1) * (opex_plant)) for i in list4]
-    list4[0] = (-1) * (capex_plant)
+    list4 = [((-1) * opex_plant) for i in list4]
+    list4[0] = (-1) * capex_plant
 
     list5 = list3.copy()
     list5 = [revenue.sum() for i in list5]
@@ -490,7 +491,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
                              input_technology, efficiency, product_price, margincost_model, variable_cost, location,
                              power_input, power_cost, power_price_series, efficiency_el,
                              efficiency_q, price_change,
-                             share_input_wind, share_input_pv, min_storage_dimension_kg, storage_time):
+                             share_input_wind, share_input_pv, min_storage_dimension_kg, storage_time_hour):
 
     list_ptx = ["Power-to-X"]
     list_xtp = ["X-to-Power"]
@@ -500,17 +501,17 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
                                        margincost_model, variable_cost, location,
                                        power_input, power_price_series, price_change,
                                        share_input_wind, share_input_pv)
-        output1 = output_ptx['production']  # in MWh/h
+        output1 = output_ptx['production']  # in MWh
 
     elif ptx_technology in list_xtp:
         output_xtp = output_x_to_power(power_cost, power_technology, product_price, efficiency_el, efficiency_q,
                           margincost_model, variable_cost, price_change)
-        output1 = output_xtp["input_product_demand"]
+        output1 = output_xtp["input_product_demand"]  # in MWh
 
-    output = pd.DataFrame({"production": output1})  # in MWh/h
-    output_kw = output['production'] * 1000
+    output = pd.DataFrame({"production": output1})  # in MWh
+    output_kw = output['production'] * 1000  # in kWh
 
-    # Umrechnung von MWh in kg der Produktions-Profile
+    # Umrechnung von kWh in kg der Produktions-Profile
     production_profile1 = output_kw/33.33
     production_profile = pd.DataFrame({"production": production_profile1})
 
@@ -522,8 +523,8 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 
     # wir brauchen trotzdem einen Speicher für den produzierten Wasserstoff (On-Site EL)
     if do_infrastructure == 'no':
-        if storage_time > 0:
-            storage_dimension = throughput * storage_time  # wenn storage_time == 0 -> storage_dimension = 0
+        if storage_time_hour > 0:
+            storage_dimension = throughput * storage_time_hour  # wenn storage_time == 0 -> storage_dimension = 0
         else:
             storage_dimension = 0
         amount_trailer = 0
@@ -782,7 +783,7 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                    efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
                    EEG_expenditure, capex_decrease, opex_decrease,
                    share_input_wind, share_input_pv):
-    output = {"capex_technology": [], "opex_technology": [], "power_cost": [], "variable_cost": []}
+    output = {"capex_technology": [], "opex_technology": [], "power_cost": [], "price_change": []}
     for x in range(20):
         factor = x/10
         _, npv = dcf_power_to_x(power_technology, capex_technology * factor, opex_technology, runtime, power_cost,
@@ -804,12 +805,11 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                                 share_input_wind, share_input_pv)
         output["power_cost"].append(npv)
         _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost * factor, product_price, input_technology, power_input,
+                                power_price_series, variable_cost, product_price, input_technology, power_input,
                                 capex_power, opex_power, efficiency, margincost_model, location, wacc,
-                                price_change, regulations_grid_expenditure, EEG_expenditure, capex_decrease,
+                                price_change * factor, regulations_grid_expenditure, EEG_expenditure, capex_decrease,
                                 opex_decrease, share_input_wind, share_input_pv)
-        output["variable_cost"].append(npv)
-
+        output["price_change"].append(npv)
     for name, values in output.items():
         plt.plot(values, label=name)
     plt.legend()

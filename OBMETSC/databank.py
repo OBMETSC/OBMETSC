@@ -13,7 +13,7 @@ SPDX-License-Identifier: MIT
 import pandas as pd
 
 
-# import the cost data for power supply and heat supply
+# import the cost data for power supply and heat supply EINHEIT: €/MWh
 def get_price_series(power_price_series):
     electricity_cost_data = pd.read_csv(
         f"databank/Strom_Kosten_{power_price_series}.csv")  # change year and type for other series
@@ -22,7 +22,7 @@ def get_price_series(power_price_series):
 
 heat_cost_data = pd.read_csv("databank/Heat_Kosten_2020.csv")
 
-# EINHEITEN? kWh ?
+# EINHEITEN:kWh ?
 # various .csv-data for the production capacity per kW for power production (PV, Wind) for various German states
 brandenburg_solar_data = pd.read_csv("databank/NINJA_PV_Brandenburg.csv")
 berlin_solar_data = pd.read_csv("databank/NINJA_PV_Berlin.csv")
