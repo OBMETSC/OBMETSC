@@ -160,9 +160,7 @@ def get():
             b = dcf_power_production(input_technology, power_input, capex_power, opex_power,
                                      runtime, location, power_cost, power_price_series, wacc, price_change,
                                      share_input_wind, share_input_pv)
-            sensitivity_power(input_technology, power_input, capex_power, opex_power,
-                                     runtime, location, power_cost, power_price_series, wacc, price_change,
-                                     share_input_wind, share_input_pv)
+
     # the output and DCF for a PtX Technology are calculated (for details: functions.py)
         c = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
                               variable_cost, location, power_input, power_price_series, price_change,
@@ -220,7 +218,7 @@ def get():
 
 # a graphic is created from the power production profile
     if input_technology in list_pp and ptx_technology in list_ptx:
-        plt.figure(1)
+        plt.figure(0)
         plt.plot('time', 'pv_production', data=a, marker='', color='skyblue', linewidth=1)
         plt.plot('time', 'wind_production', data=a, marker='', color='olive', linewidth=1)
         plt.legend()

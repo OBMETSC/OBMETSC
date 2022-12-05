@@ -784,7 +784,8 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                 efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
                 EEG_expenditure, capex_decrease, opex_decrease,
                 share_input_wind, share_input_pv):
-    output = {"capex_technology": [], "opex_technology": [], "power_cost": []}
+    output = {"capex_technology": [], "opex_technology": [], "capex_power": [], "opex_power": [], "efficiency": [],
+              "wacc": []}
     for x in range(20):
         factor = (x/10)
         _, npv = dcf_power_to_x(power_technology, capex_technology * factor, opex_technology, runtime, power_cost,
@@ -799,38 +800,36 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                                 regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
                                 share_input_wind, share_input_pv)
         output["opex_technology"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost * factor,
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
                                 power_price_series, variable_cost, product_price, input_technology, power_input,
-                                capex_power, opex_power, efficiency, margincost_model, location, wacc, price_change,
+                                capex_power * factor, opex_power, efficiency, margincost_model, location, wacc, price_change,
                                 regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
                                 share_input_wind, share_input_pv)
-        output["power_cost"].append(npv)
+        output["capex_power"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, input_technology, power_input,
+                                capex_power, opex_power * factor, efficiency, margincost_model, location, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                share_input_wind, share_input_pv)
+        output["opex_power"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, input_technology, power_input,
+                                capex_power, opex_power, efficiency * factor, margincost_model, location, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                share_input_wind, share_input_pv)
+        output["efficiency"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, input_technology, power_input,
+                                capex_power, opex_power, efficiency, margincost_model, location, wacc * factor, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                share_input_wind, share_input_pv)
+        output["wacc"].append(npv)
     for name, values in output.items():
         plt.plot(values, label=name)
     plt.ylabel('Net Present Value [€]')
     plt.xlabel('Change')
     plt.legend()
     plt.savefig("static/sensitivity_plot.png")
+    plt.figure(1)
     plt.close()
 
-def sensitivity_power(input_technology, power_input, capex_power, opex_power,
-                         runtime, location, power_cost, power_price_series, wacc, price_change,
-                         share_input_wind, share_input_pv):
-    output = {"wacc": [], "power_cost": []}
-    for x in range(20):
-        factor = (x / 10)
-        _, npv = dcf_power_production(input_technology, power_input, capex_power, opex_power,
-                                        runtime, location, power_cost, power_price_series, wacc * factor, price_change,
-                                        share_input_wind, share_input_pv)
-        output["wacc"].append(npv)
-        _, npv = dcf_power_production(input_technology, power_input, capex_power, opex_power,
-                                        runtime, location, power_cost * factor, power_price_series, wacc, price_change,
-                                        share_input_wind, share_input_pv)
-        output["power_cost"].append(npv)
-    for name, values in output.items():
-        plt.plot(values, label=name)
-    plt.ylabel('Net Present Value [€]')
-    plt.xlabel('Change')
-    plt.legend()
-    plt.savefig("static/sensitivity_power_plot.png")
-    plt.close()
