@@ -36,7 +36,7 @@
     {% if renewables %}
     <label class="form-label">Production Profile for Renewable Power Production:</label><br>
     <img src='/static/power_production_plot.png'/>
-    <p class="fw-bold">The Total Amount of yearly Renewable Power Production is: {{'{0:,}'.format(sum_renewables | int)}} MWh </p>
+        <p class="fw-bold">The Total Amount of yearly Renewable Power Production is: {{'{0:,}'.format(sum_renewables | int)}} MWh </p>
     {% endif %}
     </div>
     <p style="padding-bottom: 30px; width: 300px;">
@@ -68,8 +68,10 @@
    <!--{% endif %}-->
     </div>
     <img src='/static/sensitivity_plot.png'/>
-
 </div>
 <p style="padding-bottom: 30px; width: 300px;">
-
+    </div>
+    <img src='/static/sensitivity_power_plot.png'/>
+</div>
+<p style="padding-bottom: 30px; width: 300px;">
 {% endblock %}

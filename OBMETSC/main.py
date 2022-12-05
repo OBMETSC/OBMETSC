@@ -160,7 +160,9 @@ def get():
             b = dcf_power_production(input_technology, power_input, capex_power, opex_power,
                                      runtime, location, power_cost, power_price_series, wacc, price_change,
                                      share_input_wind, share_input_pv)
-
+            sensitivity_power(input_technology, power_input, capex_power, opex_power,
+                                     runtime, location, power_cost, power_price_series, wacc, price_change,
+                                     share_input_wind, share_input_pv)
     # the output and DCF for a PtX Technology are calculated (for details: functions.py)
         c = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
                               variable_cost, location, power_input, power_price_series, price_change,
@@ -172,12 +174,10 @@ def get():
                            opex_power, efficiency, margincost_model, location, wacc, price_change,
                            regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
                            share_input_wind, share_input_pv)
-        sensitivity(power_technology, capex_technology, opex_technology, runtime,
-                           power_cost, power_price_series, variable_cost, product_price,
-                           input_technology, power_input, capex_power,
-                           opex_power, efficiency, margincost_model, location, wacc, price_change,
-                           regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                           share_input_wind, share_input_pv)
+        sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
+                    variable_cost, product_price, input_technology, power_input, capex_power, opex_power, efficiency,
+                    margincost_model, location, wacc, price_change, regulations_grid_expenditure, EEG_expenditure,
+                    capex_decrease, opex_decrease, share_input_wind, share_input_pv)
         '''sensitivity_PTX = sensitivity_power_to_X(dcf_power_to_x(power_technology, capex_technology, opex_technology,
                                                                 runtime, power_cost, power_price_series,
                                                                 variable_cost, product_price,
@@ -226,11 +226,11 @@ def get():
         plt.legend()
         plt.savefig('static/power_production_plot.png')
 
-    return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, column_names1 = d[0].columns.values,
-                           row_data1=list(d[0].values.tolist()), sum_renewables= sum_renewables,
-                           renewables=renewables, ptx_technology=ptx_technology, column_names2 = h[0].columns.values,
-                           row_data2=list(h[0].values.tolist()),
-                           infrastructure=infrastructure, npv_infrastructure=h[1], zip = zip)
+    return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx,
+                           column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
+                           sum_renewables=sum_renewables, renewables=renewables, ptx_technology=ptx_technology,
+                           column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),
+                           infrastructure=infrastructure, npv_infrastructure=h[1], zip=zip)
 
 
 if __name__ == "__main__":
