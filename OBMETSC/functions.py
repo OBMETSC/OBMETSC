@@ -100,7 +100,7 @@ ENERGY_DEMAND_PUMP = 0
 
 
 # Function calculates the production profile for a renewable energy plant
-def output_power_production(input_technology: str, power_input, location, share_input_wind, share_input_pv):
+def output_power_production(input_technology, power_input, location, share_input_wind, share_input_pv):
     input_technology = str(input_technology)
     power_input = float(power_input)  # MWel
     location = str(location)
@@ -112,16 +112,20 @@ def output_power_production(input_technology: str, power_input, location, share_
 
     if input_technology == "Wind+PV":  # TODO Einheiten: - * MWel * kwh ???
         production_pv = share_input_pv * power_input * \
-                        (pd.DataFrame(dict_ort[location][0], columns=['electricity']) * 1000)
+                        (pd.DataFrame(dict_ort[location][0], columns=['electricity']))
         production_wind = share_input_wind * power_input * \
-                        (pd.DataFrame(dict_ort[location][1], columns=['electricity']) * 1000)
+                        (pd.DataFrame(dict_ort[location][1], columns=['electricity']))
 
     elif input_technology == "PV" or input_technology == "PV+Grid":
-        production_pv = power_input * (pd.DataFrame(dict_ort[location][0], columns=['electricity']) * 1000)
+        production_pv = power_input * (pd.DataFrame(dict_ort[location][0], columns=['electricity']))
         production_wind = power_input * pd.DataFrame(list1, columns=['electricity'])  # alle Werte in der Liste 0
     elif input_technology == "Wind" or input_technology == "Wind+Grid":
-        production_wind = power_input * (pd.DataFrame(dict_ort[location][1], columns=['electricity']) * 1000)
+        production_wind = power_input * (pd.DataFrame(dict_ort[location][1], columns=['electricity']))
         production_pv = power_input * pd.DataFrame(list1, columns=['electricity'])  # alle Werte in der Liste sind 0
+    # input_technology == "Grid"
+    # else:
+        # production_wind = 0
+        # production_pv = 0
 
     power_production = pd.DataFrame({"time": list2, "pv_production": production_pv['electricity'],
                                      "wind_production": production_wind['electricity']})
@@ -136,20 +140,20 @@ def dcf_power_production(input_technology, power_input, capex_power, opex_power,
     list1 = list(range(0, 8760))
     list1[0:8760] = [int(0) for i in list1[0:8760]]
 
-    capex_plant = int(capex_power) * int(power_input)
-    opex_plant = int(opex_power) * int(power_input)
+    capex_plant = float(capex_power) * float(power_input)
+    opex_plant = float(opex_power) * float(power_input)
 
     output_pp = output_power_production(input_technology, power_input, location, share_input_wind, share_input_pv)
 
-    if math.isclose(power_cost, 0.0):  # power_cost == 0:
+    if math.isclose(power_cost, 0.0):  # power_cost == 0: TODO: Funktion verstehe ich nicht. Die power cost werden doch indiv. eingegeben.
         power_cost1 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         power_cost = power_cost1 * price_change
     else:
         list2 = list1.copy()
-        list2[0:8760] = [int(power_cost) for i in list2[0:8760]]
+        list2[0:8760] = [float(power_cost) for i in list2[0:8760]]
         power_cost = pd.DataFrame({"price": list2})
 
-    profit = (output_pp['pv_production'] + output_pp['wind_production']) * power_cost['price']
+    profit = (output_pp['pv_production'] + output_pp['wind_production']) * power_cost['price']  # hier auf die berechnete power production zugegriffen?
 
     list1 = list(range(0, runtime + 1))
 
@@ -236,7 +240,7 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
             x_production = pd.DataFrame(
                 {"time": list1, "production": x_production3['production'], "renewable_demand": list2,
                  "grid_demand": grid_demand, "power_production": list2})
-            print(x_production)
+
         elif margincost_model == "no":
             list3 = list1.copy()
             list3[0:8760] = [(power_technology * efficiency) for i in list3[0:8760]]
@@ -299,18 +303,18 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     list1 = list(range(0, 8760))
     list1[0:8760] = [int(0) for i in list1[0:8760]]
 
-    capex_plant = int(capex_technology) * int(power_technology) * float(capex_decrease)
-    opex_plant = int(opex_technology) * int(power_technology) * float(opex_decrease)
+    capex_plant = float(capex_technology) * float(power_technology) * float(capex_decrease)
+    opex_plant = float(opex_technology) * float(power_technology) * float(opex_decrease)
     runtime = int(runtime)
     list2 = list1.copy()
-    list2[0:8760] = [int(power_cost) for i in list2[0:8760]]
+    list2[0:8760] = [float(power_cost) for i in list2[0:8760]]
 
     if math.isclose(power_cost, 0.0):  # power_cost is int(0):
         power_cost1 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         power_cost = power_cost1 * price_change
     else:
         list2 = list1.copy()
-        list2[0:8760] = [int(power_cost) for i in list2[0:8760]]
+        list2[0:8760] = [float(power_cost) for i in list2[0:8760]]
         power_cost = pd.DataFrame({"price": list2})
 
     grid_cost = power_cost['price'] * output_ptx['grid_demand']
@@ -365,7 +369,7 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
                                + power_to_x_dcf["expenditure_regulations"]
 
     x = 0
-    list3 = list(range(0,runtime+1))
+    list3 = list(range(0, runtime+1))
     npv_calc = list3
     ptx_profit = power_to_x_dcf['profit']
     while x < int(runtime+1):

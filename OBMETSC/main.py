@@ -156,7 +156,6 @@ def get():
             renewables = True
             a = output_power_production(input_technology, power_input, location,
                                         share_input_wind, share_input_pv)
-            sum_renewables = a["pv_production"].sum() + a["wind_production"].sum()
             b = dcf_power_production(input_technology, power_input, capex_power, opex_power,
                                      runtime, location, power_cost, power_price_series, wacc, price_change,
                                      share_input_wind, share_input_pv)
@@ -166,6 +165,7 @@ def get():
                               variable_cost, location, power_input, power_price_series, price_change,
                               share_input_wind, share_input_pv)
         sum_ptx = c["production"].sum()
+        sum_power = c["renewable_demand"].sum() + c["grid_demand"].sum()
         d = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
                            power_cost, power_price_series, variable_cost, product_price,
                            input_technology, power_input, capex_power,
@@ -226,7 +226,7 @@ def get():
 
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx,
                            column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
-                           sum_renewables=sum_renewables, renewables=renewables, ptx_technology=ptx_technology,
+                           sum_power=sum_power, renewables=renewables, ptx_technology=ptx_technology,
                            column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),
                            infrastructure=infrastructure, npv_infrastructure=h[1], zip=zip)
 
