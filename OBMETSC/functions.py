@@ -40,12 +40,10 @@ OPEX_PIPE_RATE = 0.04
 GDRMA = 77000  # €/Stück, eine Anlage alle 35 km, 400 m3/h
 # Netzanschluss = 20.000 #€/Netzanschluss
 
-OPEX_STORAGE_RATE = 0.02
-OPEX_TRAILER_RATE = 0.02
-
 CAPACITY_TUBETRAILER_1 = 378
 CAPACITY_TUBETRAILER_2 = 744
 CAPACITY_TUBETRAILER_3 = 1100
+OPEX_TRAILER_RATE = 0.02
 
 CAPEX_TRAILER_200bar = 450000
 CAPEX_TRAILER_350bar = 550000
@@ -53,6 +51,7 @@ CAPEX_TRAILER_550bar = 660000
 
 CAPEX_STORAGE_CH2_EURO_PRO_KG = 500
 CAPEX_STORAGE_LH2_EURO_PRO_KG = 40
+OPEX_STORAGE_RATE = 0.02
 
 CAPEX_COMPRESSOR_1 = 71000  # 20-30 auf 100-200 bar
 CAPEX_COMPRESSOR_2 = 450000  # bis 550 bar
@@ -518,9 +517,9 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 
     # Umrechnung von kWh in kg der Produktions-Profile
     production_profile1 = output_kw/33.33
-    production_profile = pd.DataFrame({"production": production_profile1})
+    production_profile = pd.DataFrame({"production": production_profile1})  # in kg
 
-    throughput = production_profile['production'].max()  # maximum throughput is design throughput of compressor
+    throughput = production_profile1.max()  # maximum throughput in kg is design throughput of compressor
 
     # maximum throughput is design throughput of compressor und Pipeline Auslegung
     throughput_m3 = throughput/0.09
@@ -529,7 +528,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
     # wir brauchen trotzdem einen Speicher für den produzierten Wasserstoff (On-Site EL)
     if do_infrastructure == 'no':
         if storage_time_hour > 0:
-            storage_dimension = throughput * storage_time_hour  # wenn storage_time == 0 -> storage_dimension = 0
+            storage_dimension = throughput * storage_time_hour
         else:
             storage_dimension = 0
         amount_trailer = 0
@@ -615,8 +614,12 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
         capex_storage = CAPEX_STORAGE_CH2_EURO_PRO_KG * infrastructure[1]
         opex_storage = OPEX_STORAGE_RATE * capex_storage
         cost_energy_demand_year = infrastructure[9] * power_cost
-        capex_compressor = CAPEX_COMPRESSOR_1
-        opex_compressor = OPEX_COMPRESSOR_1 + cost_energy_demand_year
+        if infrastructure[1] > 0:
+            capex_compressor = CAPEX_COMPRESSOR_1
+            opex_compressor = OPEX_COMPRESSOR_1 + cost_energy_demand_year
+        else:
+            capex_compressor = 0
+            opex_compressor = 0
         capex_onsite_storage = 0
         opex_onsite_storage = 0
         opex_transport = 0

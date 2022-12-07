@@ -111,7 +111,7 @@ def get():
     runtime = int(request.form['runtime'])  # Lifetime in Years
     do_infrastructure = str(request.form['do_infrastructure'])
     min_storage_dimension_kwh = 2000  # float(request.form['storage_dimension']) # mit Anmerkung: If Infrastructure is includes, give a Minimum Storeage Dimension. Put 0 for no min. Storage need.
-    storage_time_days = 7  # float(request.form['storage_dimension']) # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in days
+    storage_time_days = 1  # float(request.form['storage_dimension']) # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in days
 
     # changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)
@@ -166,6 +166,7 @@ def get():
                               share_input_wind, share_input_pv)
         sum_ptx = c["production"].sum()
         sum_power = c["renewable_demand"].sum() + c["grid_demand"].sum()
+        max_ptx = c["production"].max() * 1000
         d = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
                            power_cost, power_price_series, variable_cost, product_price,
                            input_technology, power_input, capex_power,
@@ -224,7 +225,7 @@ def get():
         plt.legend()
         plt.savefig('static/power_production_plot.png')
 
-    return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx,
+    return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, max_ptx=max_ptx,
                            column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
                            sum_power=sum_power, renewables=renewables, ptx_technology=ptx_technology,
                            column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),
