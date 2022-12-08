@@ -27,6 +27,9 @@
         </tbody>
     </table>
     <p class="fw-bold">The Net Present Value is: {{'{0:,}'.format(npv_ptx | int)}} EUR </p>
+    <p class="fw-bold">The Total Amount of yearly Production is: {{'{0:,}'.format(amount_production | int)}} MWh </p>
+    <p class="fw-bold">The Total Amount of Power Demand is: {{'{0:,}'.format(sum_power | int)}} MWh </p>
+    <p class="fw-bold">The Maximum Amount of hourly Production is: {{'{0:,}'.format(max_ptx | int)}} kWh </p>
     <p style="padding-bottom: 30px; width: 300px;">
     <hr>
     <h4>Production Profiles of the Plant:</h4><br>
@@ -40,7 +43,7 @@
     <p style="padding-bottom: 30px; width: 300px;">
 
     <div class="content">
-    {% if infrastructure %}
+    <!--{% if infrastructure %}-->
     <hr>
     <h4>Infrastructure Expenses:</h4><br>
     <label class="form-label">Expected expenses on infrastructure over the duration of {{runtime}} years</label>
@@ -63,9 +66,9 @@
             </tbody>
     </table>
     <p class="fw-bold">The Net Present Value is: {{'{0:,}'.format(npv_infrastructure | int)}} EUR</p>
-    {% endif %}
+   <!--{% endif %}-->
     </div>
-
+    <img src='/static/sensitivity_plot.png'/>
 
 </div>
 <p style="padding-bottom: 30px; width: 300px;">

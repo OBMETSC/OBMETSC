@@ -123,7 +123,17 @@
       <input type="number" class="form-control" name = "power_cost" min="0" placeholder="e.g. 0" id="power_cost" required>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
+      <label for="pp_series" class="form-label">Power Price Series  <br />
+          (if PtX Power Price is 0):</label>
+      <select id="pp_series" class="form-select" name="pp_series" size="1">
+          <option value="2019">2019</option>
+          <option value="2021">2021</option>
+          <option value="2021_fitted">2021 fitted</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
       <label for="heat_cost" class="form-label">Heat Costs in EUR/MWh (0 for Default):</label>
       <input type="number" class="form-control" name = "heat_cost" min="0" placeholder="e.g. 0" id="heat_cost" required>
     </div>
@@ -133,7 +143,7 @@
       <input type="number" class="form-control" name = "product_price" min="0" placeholder="e.g. 80" id="product_price" required>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-5">
       <label for="wacc_input" class="form-label">Weighted Average Cost of Capital (WACC) in %:</label>
       <input type="number" class="form-control" name = "wacc_input" min="0" max="100" placeholder="e.g. 7" id="wacc_input" required>
     </div>
