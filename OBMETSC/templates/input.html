@@ -230,6 +230,19 @@ SPDX-License-Identifier: MIT
         </select>
     </div>
 
+    <div class="col-md-6">
+      <label
+          for="storage_time_days"
+          class="form-label"
+          title="If no Infrastructure, but a Storage is needed, select a Storage time in days. Otherwise input 0"
+      >
+          Add Storage Time in Days:
+      </label>
+      <input type="number" step="0.1" class="form-control" name = "storage_time_days" min="0" max="100" value="0"
+             placeholder="e.g. 7" id="storage_time_days" required>
+    </div>
+
+
     <div class="col-9">
       <label for="infrastructure_type" class="form-label">Infrastructure Type:</label>
       <select id="infrastructure_type" class="form-select" name="infrastructure_type" size="1">
@@ -244,6 +257,12 @@ SPDX-License-Identifier: MIT
       <label for="distance" class="form-label">Distance to Demand Location (km):</label>
       <input type="number" step="0.01" class="form-control" name = "distance" min="0" max="500" value="0"
              placeholder="e.g. 5" id="distance" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="min_storage_dimension" class="form-label" title="If not needed input 0">Minimum Energy Storage Demand (kWh):</label>
+      <input type="number" step="0.1" class="form-control" name = "min_storage_dimension" min="0" max="500000000" value="0"
+             placeholder="e.g. 2000" id="min_storage_dimension" required>
     </div>
 
     <hr>

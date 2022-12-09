@@ -837,6 +837,5 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
     plt.xlabel('Change')
     plt.legend()
     plt.savefig("static/sensitivity_plot.png")
-    plt.figure(1)
     plt.close()
 
