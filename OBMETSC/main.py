@@ -110,8 +110,8 @@ def get():
     product_price = float(request.form['product_price'])  # PtX Energy Carrier Sales Price / XtP Energy Carrier Input Price (EUR/MWh)
     runtime = int(request.form['runtime'])  # Lifetime in Years
     do_infrastructure = str(request.form['do_infrastructure'])
-    min_storage_dimension_kwh = 2000  # float(request.form['storage_dimension']) # mit Anmerkung: If Infrastructure is includes, give a Minimum Storeage Dimension. Put 0 for no min. Storage need.
-    storage_time_days = 1  # float(request.form['storage_dimension']) # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in days
+    min_storage_dimension_kwh = float(request.form['min_storage_dimension']) # mit Anmerkung: If Infrastructure is includes, give a Minimum Storeage Dimension. Put 0 for no min. Storage need.
+    storage_time_days = float(request.form['storage_time_days']) # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in days
 
     # changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)

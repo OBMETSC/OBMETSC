@@ -2,7 +2,7 @@
 
 """Input request by the web application.
 
-SPDX-FileCopyrightText: Arian Hohgraeve <a.e.hohgraeve@web.de>
+SPDX-FileCopyrightText: Arian Hohgraeve
 SPDX-FileCopyrightText: Johannes Giehl
 
 SPDX-License-Identifier: MIT
@@ -32,7 +32,7 @@ SPDX-License-Identifier: MIT
    <div class="col-md-4">
       <label for="power_technology" class="form-label">Installed Capacity (MWel):</label>
       <input type="number" step="0.01" class="form-control" name = "power_technology" min="0"
-             placeholder="e.g. 20" id="power_technology" required>
+             value="1" id="power_technology" required>
    <p style="padding-bottom: 30px; width: 900px;">
    </div>
 
@@ -44,19 +44,19 @@ SPDX-License-Identifier: MIT
 
     <div class="col-md-4">
       <label for="capex_technology" class="form-label">Investment Cost (EUR/kW):</label>
-      <input type="number" step="0.01" class="form-control" name = "capex_technology" min="0"
+      <input type="number" step="0.01" class="form-control" name = "capex_technology" min="0" value="1600"
              placeholder="e.g. 1600" id="capex_technology" required>
     </div>
 
     <div class="col-md-4">
       <label for="opex_technology" class="form-label">Yearly Operational Cost (% of Investment Cost):</label>
-      <input type="number" step="0.01" class="form-control" name = "opex_technology" min="0"
+      <input type="number" step="0.01" class="form-control" name = "opex_technology" min="0" value="4"
              placeholder="e.g. 4" id="opex_technology" required>
     </div>
 
     <div class="col-md-4">
       <label for="variable_cost" class="form-label">Variable Costs (EUR/MWh):</label>
-      <input type="number" step="0.01" class="form-control" name = "variable_cost" min="0"
+      <input type="number" step="0.01" class="form-control" name = "variable_cost" min="0", value="10"
              placeholder="e.g. 10" id="variable_cost" required>
     <p style="padding-bottom: 30px; width: 900px;">
     </div>
@@ -66,13 +66,13 @@ SPDX-License-Identifier: MIT
 
     <div class="col-md-5">
       <label for="efficiency_ele" class="form-label">Electrical Overall-Efficiency of the system (in %):</label>
-      <input type="number" step="0.01" class="form-control" name = "efficiency_ele" min="0"
+      <input type="number" step="0.01" class="form-control" name = "efficiency_ele" min="0" value="70"
              placeholder="e.g. 70" id="efficiency_ele" required>
     </div>
 
     <div class="col-md-5">
       <label for="efficiency_th" class="form-label">Thermal Overall-Efficiency of the system (in %):</label>
-      <input type="number" step="0.01" class="form-control" name = "efficiency_th" min="0"
+      <input type="number" step="0.01" class="form-control" name = "efficiency_th" min="0" value="0"
              placeholder="e.g. 0" id="efficiency_th" required>
         <p style="padding-bottom: 30px; width: 900px;">
     </div>
@@ -95,7 +95,7 @@ SPDX-License-Identifier: MIT
 
     <div class="col-md-5">
       <label for="power_input" class="form-label">Installed Capacity (MWel):</label>
-      <input type="number" step="0.01" class="form-control" name = "power_input" min="0"
+      <input type="number" step="0.01" class="form-control" name = "power_input" min="0" value="1"
              placeholder="e.g. 20" id="power_input" required>
     </div>
 
@@ -122,13 +122,13 @@ SPDX-License-Identifier: MIT
     <div class="col-md-4">
       <label for="capex_input" class="form-label">Investment Cost (EUR/kW):</label>
       <input type="number" step="0.01" class="form-control" name = "capex_input" min="0"
-             placeholder="e.g. 650" id="capex_input" required>
+             value="650" placeholder="e.g. 650" id="capex_input" required>
     </div>
 
     <div class="col-md-4">
       <label for="opex_input" class="form-label">Yearly Operational Cost (% of Investment Cost):</label>
       <input type="number" step="0.01" class="form-control" name = "opex_input" min="0"
-             placeholder="e.g. 2" id="opex_input" required>
+             value="2" placeholder="e.g. 2" id="opex_input" required>
     </div>
 
     <div class="col-8">
@@ -161,7 +161,7 @@ SPDX-License-Identifier: MIT
       <label for="power_cost" class="form-label">PtX Power Price / XtP Energy Carrier Sales Price <br />
           (EUR/MWh - 0 for Default):</label>
       <input type="number" step="0.01" class="form-control" name = "power_cost" min="0"
-             placeholder="e.g. 0" id="power_cost" required>
+             value="0" id="power_cost" required>
     </div>
 
     <div class="col-md-3">
@@ -177,26 +177,26 @@ SPDX-License-Identifier: MIT
     <div class="col-md-3">
       <label for="heat_cost" class="form-label">Heat Sales Price <br /> (EUR/MWh - 0 for Default):</label>
       <input type="number" step="0.01" class="form-control" name = "heat_cost" min="0"
-             placeholder="e.g. 0" id="heat_cost" required>
+             value="0" placeholder="e.g. 0" id="heat_cost" required>
     </div>
 
     <div class="col-md-4">
       <label for="product_price" class="form-label">PtX Energy Carrier Sales Price / <br />
           XtP Energy Carrier Input Price (EUR/MWh): </label>
       <input type="number" step="0.01" class="form-control" name = "product_price" min="0"
-             placeholder="e.g. 80" id="product_price" required>
+             value="0" placeholder="e.g. 80" id="product_price" required>
     </div>
 
     <div class="col-md-5">
       <label for="wacc_input" class="form-label">Weighted Average Cost of Capital <br /> (WACC - in %): </label>
       <input type="number" step="0.01" class="form-control" name = "wacc_input" min="0" max="100"
-             placeholder="e.g. 7" id="wacc_input" required>
+             value="7" placeholder="e.g. 7" id="wacc_input" required>
     </div>
 
     <div class="col-md-6">
       <label for="runtime" class="form-label">Lifetime (Years):</label>
       <input type="number" class="form-control" name = "runtime" min="1" max="100"
-             placeholder="e.g. 25" id="runtime" required>
+             value="25" placeholder="e.g. 25" id="runtime" required>
     </div>
 
     <div class="col-9">
@@ -230,6 +230,19 @@ SPDX-License-Identifier: MIT
         </select>
     </div>
 
+    <div class="col-md-6">
+      <label
+          for="storage_time_days"
+          class="form-label"
+          title="If no Infrastructure, but a Storage is needed, select a Storage time in days. Otherwise input 0"
+      >
+          Add Storage Time in Days:
+      </label>
+      <input type="number" step="0.1" class="form-control" name = "storage_time_days" min="0" max="100" value="0"
+             placeholder="e.g. 7" id="storage_time_days" required>
+    </div>
+
+
     <div class="col-9">
       <label for="infrastructure_type" class="form-label">Infrastructure Type:</label>
       <select id="infrastructure_type" class="form-select" name="infrastructure_type" size="1">
@@ -244,6 +257,12 @@ SPDX-License-Identifier: MIT
       <label for="distance" class="form-label">Distance to Demand Location (km):</label>
       <input type="number" step="0.01" class="form-control" name = "distance" min="0" max="500" value="0"
              placeholder="e.g. 5" id="distance" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="min_storage_dimension" class="form-label" title="If not needed input 0">Minimum Energy Storage Demand (kWh):</label>
+      <input type="number" step="0.1" class="form-control" name = "min_storage_dimension" min="0" max="500000000" value="0"
+             placeholder="e.g. 2000" id="min_storage_dimension" required>
     </div>
 
     <hr>
