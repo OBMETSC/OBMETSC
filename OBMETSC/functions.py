@@ -23,6 +23,7 @@ import pandas as pd
 import math
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
+from matplotlib.ticker import PercentFormatter
 from databank import *
 
 
@@ -785,7 +786,6 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
 
     return infrastructure_dcf, npv
 
-
 def sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
                 variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
                 efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
@@ -831,8 +831,10 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                                 regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
                                 share_input_wind, share_input_pv)
         output["wacc"].append(npv)
+
     for name, values in output.items():
-        plt.plot(values, label=name)
+       plt.plot(values, label=name)
+    plt.xticks(np.arange(0,21,2.5),['0%','25%','50%','75%','100%','125%','150%','175%','200%'])
     plt.ylabel('Net Present Value [€]')
     plt.xlabel('Change')
     plt.legend()
