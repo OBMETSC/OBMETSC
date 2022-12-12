@@ -227,6 +227,7 @@ def get():
 
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, max_ptx=max_ptx,
                            column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
+                           Levelised_Cost = round(LCOX, 2),
                            sum_power=sum_power, renewables=renewables, ptx_technology=ptx_technology,
                            column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),
                            infrastructure=infrastructure, npv_infrastructure=h[1], zip=zip)
