@@ -185,6 +185,12 @@ def get():
                                                                 price_change, regulations_grid_expenditure,
                                                                 EEG_expenditure, capex_decrease, opex_decrease,
                                                                 share_input_wind, share_input_pv))'''
+        
+        LCOX = LCOH2(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
+                   variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
+                   efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease,
+                   share_input_wind, share_input_pv)        
 
     # the output and DCF for a XtP Technology are calculated (for details: functions.py)
     elif ptx_technology == "X-to-Power":
