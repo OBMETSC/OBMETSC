@@ -156,10 +156,14 @@ def get():
             renewables = True
             a = output_power_production(input_technology, power_input, location,
                                         share_input_wind, share_input_pv)
+
+            sum_power_production = a["wind_production"].sum() + a["pv_production"].sum()
+
             b = dcf_power_production(input_technology, power_input, capex_power, opex_power,
                                      runtime, location, power_cost, power_price_series, wacc, price_change,
                                      share_input_wind, share_input_pv)
-
+        else:
+            sum_power_production = 0
     # the output and DCF for a PtX Technology are calculated (for details: functions.py)
         c = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
                               variable_cost, location, power_input, power_price_series, price_change,
@@ -167,6 +171,8 @@ def get():
         sum_ptx = c["production"].sum()
         sum_power = c["renewable_demand"].sum() + c["grid_demand"].sum()
         max_ptx = c["production"].max() * 1000
+        o2_production = ((c["production"].sum() * 1000) / 33.3) * 8
+
         d = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
                            power_cost, power_price_series, variable_cost, product_price,
                            input_technology, power_input, capex_power,
@@ -232,7 +238,8 @@ def get():
 
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, max_ptx=max_ptx,
                            column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
-                           Levelised_Cost=round(LCOX, 2),
+                           o2_production=o2_production,
+                           Levelised_Cost=round(LCOX, 2), sum_power_production=sum_power_production,
                            sum_power=sum_power, renewables=renewables, ptx_technology=ptx_technology,
                            column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),
                            infrastructure=infrastructure, npv_infrastructure=h[1], zip=zip)
