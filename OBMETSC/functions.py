@@ -551,7 +551,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 
     elif ptx_technology in list_xtp:
         output_xtp = output_x_to_power(power_cost, power_technology, product_price, efficiency_el, efficiency_q,
-                          margincost_model, variable_cost, price_change)
+                                       margincost_model, variable_cost, price_change)
         output1 = output_xtp["input_product_demand"]  # in MWh
 
     output = pd.DataFrame({"production": output1})  # in MWh
@@ -577,7 +577,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
         pipe_length = 0
         capacity = 0
         if storage_dimension > 0:
-            energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()  # only if storage_dimension > 0
+            energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()
         else:
             energy_demand_year = 0
     else:
@@ -650,7 +650,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
 def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, infrastructure):
 
-    power_cost_kwh = power_cost / 1000 # von €/MWh zu €/kWh
+    power_cost_kwh = power_cost / 1000  # von €/MWh zu €/kWh
 
     if do_infrastructure == 'no':
         capex_storage = CAPEX_STORAGE_CH2_EURO_PRO_KG * infrastructure.storage_dimension
@@ -675,20 +675,20 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
 
     else:
         if infrastructure_type == "Pipeline":
-            if infrastructure[6] < GAS_FLOW_HOUR_1:
-                capex_pipe = CAPEX_PIPE_1 * infrastructure[4]
-            elif infrastructure[6] < GAS_FLOW_HOUR_2:
-                capex_pipe = CAPEX_PIPE_2 * infrastructure[4]
-            elif infrastructure[6] < GAS_FLOW_HOUR_3:
-                capex_pipe = CAPEX_PIPE_3 * infrastructure[4]
-            elif infrastructure[6] < GAS_FLOW_HOUR_4:
-                capex_pipe = CAPEX_PIPE_4 * infrastructure[4]
+            if infrastructure.throughput_m3 < GAS_FLOW_HOUR_1:
+                capex_pipe = CAPEX_PIPE_1 * infrastructure.pipe_length
+            elif infrastructure.throughput_m3 < GAS_FLOW_HOUR_2:
+                capex_pipe = CAPEX_PIPE_2 * infrastructure.pipe_length
+            elif infrastructure.throughput_m3 < GAS_FLOW_HOUR_3:
+                capex_pipe = CAPEX_PIPE_3 * infrastructure.pipe_length
+            elif infrastructure.throughput_m3 < GAS_FLOW_HOUR_4:
+                capex_pipe = CAPEX_PIPE_4 * infrastructure.pipe_length
             else:
                 print("MAX PIPELINE TO SMALL -> USING MAX PIPELINE")
-                capex_pipe = CAPEX_PIPE_4 * infrastructure[4]  # TODO: Was, wenn max. Pipeline zu klein
+                capex_pipe = CAPEX_PIPE_4 * infrastructure.pipe_length  # TODO: Was, wenn max. Pipeline zu klein
             opex_pipe = OPEX_PIPE_RATE * capex_pipe
             # Druckreduktion in Pipeline für Endanwendung durch GDRMA alle 35 km. (Mind. 2)
-            gdrma_amount = max(math.ceil(infrastructure[4] / 35), 2)
+            gdrma_amount = max(math.ceil(infrastructure.pipe_length / 35), 2)
             capex_gdrma = gdrma_amount * GDRMA
             opex_transport = opex_pipe
             capex_storage = 0
@@ -741,11 +741,11 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             opex_trailer = OPEX_TRAILER_RATE * capex_trailer
             opex_transport = opex_trailer + OPEX_TRUCK
             cost_energy_demand_year = infrastructure.energy_demand_year * power_cost_kwh
-            capex_liqu = 105000000 * max((((infrastructure[5] * 24)/50)**0.66), 1)
+            capex_liqu = 105000000 * max((((infrastructure.throughput * 24)/50)**0.66), 1)
             opex_liqu = OPEX_LIQU_RATE * capex_liqu + cost_energy_demand_year
-            capex_evaporator = CAPEX_EVA_EURO_PRO_KG * (infrastructure[5] * 24)
+            capex_evaporator = CAPEX_EVA_EURO_PRO_KG * (infrastructure.throughput * 24)
             opex_evaporator = OPEX_EVA_RATE * capex_evaporator
-            capex_lh2_pump = CAPEX_PUMP_EURO_PRO_KG * (infrastructure[5] * 24)
+            capex_lh2_pump = CAPEX_PUMP_EURO_PRO_KG * (infrastructure.throughput * 24)
             opex_lh2_pump = OPEX_PUMP_RATE * capex_lh2_pump
             capex_compressor = 0
             opex_compressor = 0
