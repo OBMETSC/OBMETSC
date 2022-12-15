@@ -49,7 +49,6 @@
     <p style="padding-bottom: 30px; width: 300px;">
 
     <div class="content">
-    <!--{% if infrastructure %}-->
     <hr>
     <h4>Infrastructure Expenses:</h4><br>
     <label class="form-label">Expected expenses on infrastructure over the duration of {{runtime}} years</label>
@@ -72,11 +71,11 @@
             </tbody>
     </table>
     <p class="fw-bold">The Net Present Value is: {{'{0:,}'.format(npv_infrastructure | int)}} EUR</p>
-   <!--{% endif %}-->
-    <div>
+    <hr>
+    <div class="content">
+    <label class="form-label">Sensitivity for X-Production:</label><br>
     <img src='/static/sensitivity_infra_plot.png'/>
-
+    </div>
 </div>
 <p style="padding-bottom: 30px; width: 300px;">
-
 {% endblock %}

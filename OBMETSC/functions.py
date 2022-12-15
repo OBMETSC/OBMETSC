@@ -24,6 +24,8 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.ticker import PercentFormatter
+import copy
+from dataclasses import dataclass
 from databank import *
 
 
@@ -85,18 +87,18 @@ ENERGY_DEMAND_LIQU = 7
 ENERGY_DEMAND_EVA = 0
 ENERGY_DEMAND_PUMP = 0
 
-# @dataclasses
-# class InfrastructureData:
-    # amount_trailer: int
-    # storage_dimension: float
-    # onsite_storage: float
-    # transport_pressure: int
-    # pipe_length: float
-    # throughput: float
-    # throughput_m3: float
-    # throughput_kw: float
-    # capacity: int
-    # energy_demand_year: float
+@dataclass
+class InfrastructureData:
+    amount_trailer: int
+    storage_dimension: float
+    onsite_storage: float
+    transport_pressure: int
+    pipe_length: float
+    throughput: float
+    throughput_m3: float
+    throughput_kw: float
+    capacity: int
+    energy_demand_year: float
 
 
 # Function calculates the production profile for a renewable energy plant
@@ -641,7 +643,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 
             energy_demand_year = ENERGY_DEMAND_LIQU * production_profile['production'].sum()
 
-    return (amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length, throughput,
+    return InfrastructureData(amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length, throughput,
             throughput_m3, throughput_kw, capacity, energy_demand_year)
 
 
@@ -651,10 +653,10 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
     power_cost_kwh = power_cost / 1000 # von €/MWh zu €/kWh
 
     if do_infrastructure == 'no':
-        capex_storage = CAPEX_STORAGE_CH2_EURO_PRO_KG * infrastructure[1]
+        capex_storage = CAPEX_STORAGE_CH2_EURO_PRO_KG * infrastructure.storage_dimension
         opex_storage = OPEX_STORAGE_RATE * capex_storage
-        cost_energy_demand_year = infrastructure[9] * power_cost_kwh
-        if infrastructure[1] > 0:
+        cost_energy_demand_year = infrastructure.energy_demand_year * power_cost_kwh
+        if infrastructure.storage_dimension > 0:
             capex_compressor = CAPEX_COMPRESSOR_1
             opex_compressor = OPEX_COMPRESSOR_1 + cost_energy_demand_year
         else:
@@ -704,20 +706,20 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             capex_trailer = 0
 
         if infrastructure_type == "Tubetrailer":
-            capex_onsite_storage = infrastructure[2] * CAPEX_STORAGE_CH2_EURO_PRO_KG
+            capex_onsite_storage = infrastructure.onsite_storage * CAPEX_STORAGE_CH2_EURO_PRO_KG
             opex_onsite_storage = capex_onsite_storage * OPEX_STORAGE_RATE
-            capex_storage = infrastructure[1] * CAPEX_STORAGE_CH2_EURO_PRO_KG
+            capex_storage = infrastructure.storage_dimension * CAPEX_STORAGE_CH2_EURO_PRO_KG
             opex_storage = OPEX_STORAGE_RATE * capex_storage
-            cost_energy_demand_year = infrastructure[9] * power_cost_kwh
-            if infrastructure[3] == 200:
+            cost_energy_demand_year = infrastructure.energy_demand_year * power_cost_kwh
+            if infrastructure.transport_pressure == 200:
                 capex_compressor = CAPEX_COMPRESSOR_1
                 opex_compressor = OPEX_COMPRESSOR_1 + cost_energy_demand_year
                 capex_trailer = CAPEX_TRAILER_200bar
-            elif infrastructure[3] == 350:
+            elif infrastructure.transport_pressure == 350:
                 capex_compressor = CAPEX_COMPRESSOR_1 + CAPEX_COMPRESSOR_2
                 opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2 + cost_energy_demand_year
                 capex_trailer = CAPEX_TRAILER_350bar
-            elif infrastructure[3] == 550:
+            elif infrastructure.transport_pressure == 550:
                 capex_compressor = CAPEX_COMPRESSOR_1 + CAPEX_COMPRESSOR_2
                 opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2 + cost_energy_demand_year
                 capex_trailer = CAPEX_TRAILER_550bar
@@ -731,14 +733,14 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             opex_lh2_pump = 0
 
         if infrastructure_type == "LNG":
-            capex_onsite_storage = infrastructure[2] * CAPEX_STORAGE_LH2_EURO_PRO_KG
+            capex_onsite_storage = infrastructure.onsite_storage * CAPEX_STORAGE_LH2_EURO_PRO_KG
             opex_onsite_storage = capex_onsite_storage * OPEX_STORAGE_RATE
-            capex_storage = infrastructure[1] * CAPEX_STORAGE_LH2_EURO_PRO_KG
+            capex_storage = infrastructure.storage_dimension * CAPEX_STORAGE_LH2_EURO_PRO_KG
             opex_storage = OPEX_STORAGE_RATE * capex_storage
-            capex_trailer = infrastructure[0] * 200 * infrastructure[8]  # capex_trailer_spez = 200
+            capex_trailer = infrastructure.amount_trailer * 200 * infrastructure.capacity  # capex_trailer_spez = 200
             opex_trailer = OPEX_TRAILER_RATE * capex_trailer
             opex_transport = opex_trailer + OPEX_TRUCK
-            cost_energy_demand_year = infrastructure[9] * power_cost_kwh
+            cost_energy_demand_year = infrastructure.energy_demand_year * power_cost_kwh
             capex_liqu = 105000000 * max((((infrastructure[5] * 24)/50)**0.66), 1)
             opex_liqu = OPEX_LIQU_RATE * capex_liqu + cost_energy_demand_year
             capex_evaporator = CAPEX_EVA_EURO_PRO_KG * (infrastructure[5] * 24)
@@ -877,23 +879,25 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
 
 
 def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, infrastructure):
-    output = {"power_cost": [], "runtime": []}
+    output_1 = {"power_cost": [], "runtime": [], "capacity": []}
     for x in range(20):
         factor = (x/10)
         _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost * factor,
                                     infrastructure)
-        output["power_cost"].append(npv)
-        _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime * factor, wacc, power_cost,
+        output_1["power_cost"].append(npv)
+        _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, int(runtime * factor), wacc, power_cost,
                                     infrastructure)
-        output["runtime"].append(npv)
+        output_1["runtime"].append(npv)
+        temp = copy.deepcopy(infrastructure)
+        temp.capacity *= factor
+        _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, temp)
+        output_1["capacity"].append(npv)
 
-    for name, values in output.items():
+    for name, values in output_1.items():
         plt.plot(values, label=name)
-        plt.xticks(np.arange(0,21,2.5),['0%','25%','50%','75%','100%','125%','150%','175%','200%'])
-        plt.ylabel('Net Present Value [€]')
-        plt.xlabel('Change')
-        plt.legend()
-        plt.savefig("static/sensitivity_infra_plot.png")
-        plt.show()
-        plt.close()
+    plt.ylabel('Net Present Value [€]')
+    plt.xlabel('Change')
+    plt.legend()
+    plt.savefig("static/sensitivity_infra_plot.png")
+    plt.close()
 

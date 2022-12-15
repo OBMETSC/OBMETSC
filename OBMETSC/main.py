@@ -227,7 +227,7 @@ def get():
                                      min_storage_dimension_kg, storage_time_hour)
 
     h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
-
+    sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
 
 # a graphic is created from the power production profile
     if input_technology in list_pp and ptx_technology in list_ptx:
