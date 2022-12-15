@@ -35,8 +35,11 @@
     <p class="fw-bold">The Total Amount of yearly O2-Production is: {{'{0:,}'.format(o2_production | int)}} kg </p>
     <p style="padding-bottom: 30px; width: 300px;">
     <hr>
+    <div class="content">
+    <label class="form-label">Sensitivity for X-Production:</label><br>
+    <img src='/static/sensitivity_plot.png'/>
+    </div>
     <h4>Production Profiles of the Plant:</h4><br>
-
     <div class="content">
     {% if renewables %}
     <label class="form-label">Production Profile for Renewable Power Production:</label><br>
@@ -70,8 +73,8 @@
     </table>
     <p class="fw-bold">The Net Present Value is: {{'{0:,}'.format(npv_infrastructure | int)}} EUR</p>
    <!--{% endif %}-->
-    </div>
-    <img src='/static/sensitivity_plot.png'/>
+    <div>
+    <img src='/static/sensitivity_infra_plot.png'/>
 
 </div>
 <p style="padding-bottom: 30px; width: 300px;">

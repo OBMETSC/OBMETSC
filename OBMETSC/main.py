@@ -228,6 +228,7 @@ def get():
 
     h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
 
+
 # a graphic is created from the power production profile
     if input_technology in list_pp and ptx_technology in list_ptx:
         plt.figure(0)
