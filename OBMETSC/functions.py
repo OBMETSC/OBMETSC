@@ -53,6 +53,7 @@ CAPEX_TRAILER_350bar = 550000
 CAPEX_TRAILER_550bar = 660000
 
 CAPEX_STORAGE_CH2_EURO_PRO_KG = 500
+CAPEX_STORAGE_CH2_EURO_PRO_M3 = 2000
 CAPEX_STORAGE_LH2_EURO_PRO_KG = 40
 OPEX_STORAGE_RATE = 0.02
 
@@ -91,6 +92,7 @@ ENERGY_DEMAND_PUMP = 0
 class InfrastructureData:
     amount_trailer: int
     storage_dimension: float
+    storage_dimension_m3: float
     onsite_storage: float
     transport_pressure: int
     pipe_length: float
@@ -615,10 +617,10 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             # Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte
             # Belieferungsintervall speichern könne
             onsite_storage = interval_tours_days * (throughput * 24)
-            onsite_storage_m3 = onsite_storage / 0.09
+            onsite_storage_m3 = onsite_storage / 14
 
             storage_dimension = capacity + min_storage_dimension_kg
-            storage_dimension_m3 = storage_dimension / 0.09
+            storage_dimension_m3 = storage_dimension / 14
 
             energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()
 
@@ -635,16 +637,16 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             interval_tours_days = interval_tours_hours / 24  # alle x tage kommt eine Lieferung
             # Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte
             # Belieferungsintervall speichern könne
-            onsite_storage = interval_tours_days * (throughput * 24)
+            onsite_storage = interval_tours_hours * throughput
             onsite_storage_m3 = onsite_storage / 0.09
 
             storage_dimension = capacity + min_storage_dimension_kg
-            storage_dimension_m3 = storage_dimension / 0.09
+            storage_dimension_m3 = storage_dimension / 14  # 14 kg/m3 bei 200 bar
 
             energy_demand_year = ENERGY_DEMAND_LIQU * production_profile['production'].sum()
 
-    return InfrastructureData(amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length, throughput,
-            throughput_m3, throughput_kw, capacity, energy_demand_year)
+    return InfrastructureData(amount_trailer, storage_dimension, storage_dimension_m3, onsite_storage, transport_pressure, pipe_length,
+                              throughput, throughput_m3, throughput_kw, capacity, energy_demand_year)
 
 
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
@@ -704,11 +706,14 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             capex_compressor = 0
             opex_compressor = 0
             capex_trailer = 0
+            capex_transport = capex_pipe
+            capex_conversion = capex_gdrma
 
         if infrastructure_type == "Tubetrailer":
             capex_onsite_storage = infrastructure.onsite_storage * CAPEX_STORAGE_CH2_EURO_PRO_KG
             opex_onsite_storage = capex_onsite_storage * OPEX_STORAGE_RATE
-            capex_storage = infrastructure.storage_dimension * CAPEX_STORAGE_CH2_EURO_PRO_KG
+            # capex_storage = infrastructure.storage_dimension * CAPEX_STORAGE_CH2_EURO_PRO_KG
+            capex_storage = infrastructure.storage_dimension_m3 * CAPEX_STORAGE_CH2_EURO_PRO_M3
             opex_storage = OPEX_STORAGE_RATE * capex_storage
             cost_energy_demand_year = infrastructure.energy_demand_year * power_cost_kwh
             if infrastructure.transport_pressure == 200:
@@ -725,12 +730,14 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
                 capex_trailer = CAPEX_TRAILER_550bar
             opex_trailer = OPEX_TRAILER_RATE * capex_trailer
             opex_transport = opex_trailer + OPEX_TRUCK
+            capex_transport = capex_trailer + CAPEX_TRUCK
             capex_liqu = 0
             opex_liqu = 0
             capex_evaporator = 0
             opex_evaporator = 0
             capex_lh2_pump = 0
             opex_lh2_pump = 0
+            capex_conversion = capex_compressor
 
         if infrastructure_type == "LNG":
             capex_onsite_storage = infrastructure.onsite_storage * CAPEX_STORAGE_LH2_EURO_PRO_KG
@@ -740,6 +747,7 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             capex_trailer = infrastructure.amount_trailer * 200 * infrastructure.capacity  # capex_trailer_spez = 200
             opex_trailer = OPEX_TRAILER_RATE * capex_trailer
             opex_transport = opex_trailer + OPEX_TRUCK
+            capex_transport = capex_trailer + CAPEX_TRUCK
             cost_energy_demand_year = infrastructure.energy_demand_year * power_cost_kwh
             capex_liqu = 105000000 * max((((infrastructure.throughput * 24)/50)**0.66), 1)
             opex_liqu = OPEX_LIQU_RATE * capex_liqu + cost_energy_demand_year
@@ -749,68 +757,20 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             opex_lh2_pump = OPEX_PUMP_RATE * capex_lh2_pump
             capex_compressor = 0
             opex_compressor = 0
-
+            capex_conversion = capex_lh2_pump + capex_evaporator + capex_liqu
     list3 = list(range(0, runtime + 1))
+    list4 = [((-1) * opex_transport) for i in range(len(list3))]
+    list4[0] = (-1) * capex_transport
 
-    list4 = [((-1) * (opex_transport)) for _ in range(len(list3))]
-    list4[0] = 0
-    if do_infrastructure == "yes":
-        if infrastructure_type == "Pipeline":
-            for i in range(len(list4)):
-                if i % AMORTIZATION_PIPE == 0:
-                    list4[i] -= capex_pipe
-                if i % AMORTIZATION_GDRMA == 0:
-                    list4[i] -= capex_gdrma
-        else:
-            for i in range(len(list4)):
-                if i % AMORTIZATION_TRUCK == 0:
-                    list4[i] -= CAPEX_TRUCK
-                if i % AMORTIZATION_TRAILER == 0:
-                    list4[i] -= capex_trailer
     # hier soll rein, dass nach X Jahren Komponenten ausgetauscht werden müssen und entsprechend die CaPex nach X Jahren
     # erneut anfallen
     # Jährliche Energiekosten solln in einer Spalte angezeigt werden oder zu den Kosten in Liste 5 addiert werden
 
     list5 = [((-1) * (opex_compressor + opex_liqu + opex_evaporator + opex_lh2_pump)) for _ in range(len(list3))]
-    list5[0] = 0
-    if do_infrastructure == "yes":
-        if infrastructure_type == "Tubetrailer":
-            for i in range(len(list5)):
-                if i % AMORTIZATION_COMPRESSOR == 0:
-                    list5[i] -= capex_compressor
-        if infrastructure_type == "LNG":
-            for i in range(len(list5)):
-                if i % AMORTIZATION_LIQU == 0:
-                    list5[i] -= capex_liqu
-                if i % AMORTIZATION_EVA == 0:
-                    list5[i] -= capex_evaporator
-                if i % AMORTIZATION_PUMP == 0:
-                    list5[i] -= capex_lh2_pump
-        if infrastructure_type == "Pipeline":
-            list5[0] = 0
-    # do_infrastructure == "no":
-    else:
-        for i in range(len(list5)):
-            if i % AMORTIZATION_COMPRESSOR == 0:
-                list5[i] -= capex_compressor
+    list5[0] = (-1) * capex_conversion
 
     list6 = [((-1) * (opex_storage + opex_onsite_storage)) for _ in range(len(list3))]
-    list6[0] = 0
-    if do_infrastructure == "yes":
-        if infrastructure_type == "Pipeline":
-            list6[0] = 0
-        else:
-            for i in range(len(list6)):
-                if i % AMORTIZATION_STORAGE == 0:
-                    list6[i] -= capex_storage
-                if i % AMORTIZATION_ONSITE_STORAGE == 0:
-                    list6[i] -= capex_onsite_storage
-    else:
-        for i in range(len(list6)):
-            if i % AMORTIZATION_STORAGE == 0:
-                list6[i] -= capex_storage
-            if i % AMORTIZATION_ONSITE_STORAGE == 0:
-                list6[i] -= capex_onsite_storage
+    list6[0] = capex_storage + capex_onsite_storage
 
     infrastructure_dcf = pd.DataFrame({"year": list3, "expenditure_transport": list4,
                                        "expenditure_conversion": list5, "expenditure_storage": list6})
@@ -879,19 +839,16 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
 
 
 def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, infrastructure):
-    output_1 = {"power_cost": [], "runtime": [], "capacity": []}
+    output_1 = {"power_cost": [], "storage_dimension": []}
     for x in range(20):
         factor = (x/10)
         _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost * factor,
                                     infrastructure)
         output_1["power_cost"].append(npv)
-        _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, int(runtime * factor), wacc, power_cost,
-                                    infrastructure)
-        output_1["runtime"].append(npv)
         temp = copy.deepcopy(infrastructure)
         temp.capacity *= factor
         _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, temp)
-        output_1["capacity"].append(npv)
+        output_1["storage_dimension"].append(npv)
 
     for name, values in output_1.items():
         plt.plot(values, label=name)
