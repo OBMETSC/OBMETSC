@@ -168,7 +168,7 @@ def get():
         c = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
                               variable_cost, location, power_input, power_price_series, price_change,
                               share_input_wind, share_input_pv)
-        sum_ptx = c["production"].sum()
+        sum_ptx = c["production"].sum()  # in MWh
         sum_power = c["renewable_demand"].sum() + c["grid_demand"].sum()
         max_ptx = c["production"].max() * 1000
         o2_production = ((c["production"].sum() * 1000) / 33.3) * 8
