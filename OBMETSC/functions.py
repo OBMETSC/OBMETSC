@@ -667,13 +667,11 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
         capex_onsite_storage = 0
         opex_onsite_storage = 0
         opex_transport = 0
-        capex_liqu = 0
         opex_liqu = 0
-        capex_evaporator = 0
         opex_evaporator = 0
-        capex_lh2_pump = 0
         opex_lh2_pump = 0
-        capex_trailer = 0
+        capex_conversion = capex_compressor
+        capex_transport = 0
 
     else:
         if infrastructure_type == "Pipeline":
@@ -697,11 +695,8 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             opex_storage = 0
             capex_onsite_storage = 0
             opex_onsite_storage = 0
-            capex_liqu = 0
             opex_liqu = 0
-            capex_evaporator = 0
             opex_evaporator = 0
-            capex_lh2_pump = 0
             opex_lh2_pump = 0
             capex_compressor = 0
             opex_compressor = 0
@@ -731,11 +726,8 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             opex_trailer = OPEX_TRAILER_RATE * capex_trailer
             opex_transport = opex_trailer + OPEX_TRUCK
             capex_transport = capex_trailer + CAPEX_TRUCK
-            capex_liqu = 0
             opex_liqu = 0
-            capex_evaporator = 0
             opex_evaporator = 0
-            capex_lh2_pump = 0
             opex_lh2_pump = 0
             capex_conversion = capex_compressor
 
