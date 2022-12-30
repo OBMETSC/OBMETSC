@@ -1,5 +1,4 @@
 '''
-
 This is OBMETSC, the Open-source Business Model Evaluation Tool
 for Sector Coupling technologies. Developed at the chair
 of Energy and Recource Management at the Technische
@@ -8,13 +7,9 @@ Universität Berlin.
 Functions File:
 The functions include the mathematical calculation
 logic for determining the production and profitability
-
 SPDX-FileCopyrightText: Arian Hohgraeve <a.e.hohgraeve@web.de>
 SPDX-FileCopyrightText: Johannes Giehl
-
-
 SPDX-License-Identifier: MIT
-
 '''
 
 
@@ -115,7 +110,7 @@ def output_power_production(input_technology, power_input, location, share_input
 
     list2 = list(range(0, 8760))
 
-    if input_technology == "Wind+PV":  # TODO Einheiten: - * MWel * kwh ???
+    if input_technology == "Wind+PV":
         production_pv = share_input_pv * power_input * \
                         (pd.DataFrame(dict_ort[location][0], columns=['electricity']))
         production_wind = share_input_wind * power_input * \
@@ -290,15 +285,16 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
 
 
 def LCOH2(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-          variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
-          efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
-          EEG_expenditure, capex_decrease, opex_decrease,
-          share_input_wind, share_input_pv):
+                   variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
+                   efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease,
+                   share_input_wind, share_input_pv):
+
     # get the production profile of the plant
     plant_production = output_power_to_x(power_technology, input_technology, efficiency, product_price,
-                                         margincost_model, variable_cost, location, power_input,
-                                         power_price_series, price_change,
-                                         share_input_wind, share_input_pv)
+                      margincost_model, variable_cost, location, power_input,
+                      power_price_series, price_change,
+                      share_input_wind, share_input_pv)
 
     # get the discounted cash flow of the plant
     power_to_x_dcf = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
@@ -308,20 +304,22 @@ def LCOH2(power_technology, capex_technology, opex_technology, runtime, power_co
                                     opex_decrease, share_input_wind, share_input_pv)
 
     # calculate the annuity factor for given runtime and wacc
-    annuity_factor = (((1 + wacc) ** runtime) - 1) / (((1 + wacc) ** runtime) * wacc)
+    annuity_factor = (((1+wacc)**runtime)-1) / (((1+wacc)**runtime)*wacc)
 
     # access only the cost columns of the dcf dataframe
     cost_df = power_to_x_dcf[0]
-    cost_df.drop(cost_df.columns[[5, 6, 7]], axis=1, inplace=True)
+    cost_df.drop(cost_df.columns[[5,6,7]], axis=1, inplace=True)
 
     # calculate the investment cost and discoutned annual cost based on the reduces dcf dataframe
     total_investment = cost_df.loc[0].sum()
+
     annual_cost = cost_df.loc[1].sum() * annuity_factor
     total_discounted_cost = (total_investment + annual_cost) * -1
 
     # calculate the discounted production based on the plant productin profile
     x_production = plant_production["production"]
     discounted_production = x_production.sum() * annuity_factor
+    flh = x_production.sum()/power_technology
 
     # claculate the levelised cost
     Levelized_cost = total_discounted_cost / discounted_production
@@ -385,13 +383,11 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
 
     revenue = product_price * output_ptx['production']
     revenue_power = output_ptx['power_production'] * power_cost['price']
-    energy_demand = ((output_ptx['production'] * 1000) / 3.54) * 5  # von MWh ind kWh in Nm3 mal 5 kWh/Nm3
-    energy_cost = energy_demand * (power_cost['price'] * 1000)
 
     list3 = list(range(0, runtime + 1))
 
     list4 = list3.copy()
-    list4 = [((-1) * (opex_plant + energy_cost)) for i in list4]
+    list4 = [((-1) * opex_plant) for i in list4]
     list4[0] = (-1) * capex_plant
 
     list5 = list3.copy()
@@ -411,8 +407,10 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
          "expenditure_power_grid": list7,
          "expenditure_regulations": regulations_cost, "revenue_technology": list5, "revenue_power": list6})
 
-    power_to_x_dcf['profit'] = power_to_x_dcf['expenditure_technology'] + power_to_x_dcf['expenditure_power_production']\
-                               + power_to_x_dcf["expenditure_power_grid"] + power_to_x_dcf['revenue_technology'] + power_to_x_dcf['revenue_power'] \
+    power_to_x_dcf['profit'] = power_to_x_dcf['expenditure_technology'] + \
+                               power_to_x_dcf['expenditure_power_production']\
+                               + power_to_x_dcf["expenditure_power_grid"] + power_to_x_dcf['revenue_technology'] + \
+                               power_to_x_dcf['revenue_power'] \
                                + power_to_x_dcf["expenditure_regulations"]
 
     x = 0
@@ -426,6 +424,7 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     npv = sum(npv_calc)
 
     return power_to_x_dcf, npv
+
 
 # Function calculates the production profile for a X-to-Power plant
 def output_x_to_power(power_cost, power_price_series, power_technology,
@@ -556,7 +555,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 
     elif ptx_technology in list_xtp:
         output_xtp = output_x_to_power(power_cost, power_technology, product_price, efficiency_el, efficiency_q,
-                                       margincost_model, variable_cost, price_change)
+                          margincost_model, variable_cost, price_change)
         output1 = output_xtp["input_product_demand"]  # in MWh
 
     output = pd.DataFrame({"production": output1})  # in MWh
@@ -565,7 +564,9 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
     # Umrechnung von kWh in kg der Produktions-Profile
     production_profile1 = output_kw/33.33
     production_profile = pd.DataFrame({"production": production_profile1})  # in kg
+
     throughput = production_profile1.max()  # maximum throughput in kg is design throughput of compressor
+
     # maximum throughput is design throughput of compressor und Pipeline Auslegung
     throughput_m3 = throughput/0.09
     throughput_kw = output_kw.max()
@@ -582,7 +583,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
         pipe_length = 0
         capacity = 0
         if storage_dimension > 0:
-            energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()
+            energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()  # only if storage_dimension > 0
         else:
             energy_demand_year = 0
     else:
@@ -620,9 +621,10 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             # Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte
             # Belieferungsintervall speichern könne
             onsite_storage = interval_tours_days * (throughput * 24)
-            onsite_storage_m3 = onsite_storage / 14
+            onsite_storage_m3 = onsite_storage / 0.09
 
             storage_dimension = capacity + min_storage_dimension_kg
+            storage_dimension_m3 = storage_dimension / 0.09
 
             energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()
 
@@ -639,21 +641,20 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             interval_tours_days = interval_tours_hours / 24  # alle x tage kommt eine Lieferung
             # Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte
             # Belieferungsintervall speichern könne
-            onsite_storage = interval_tours_hours * throughput
+            onsite_storage = interval_tours_days * (throughput * 24)
             onsite_storage_m3 = onsite_storage / 0.09
 
             storage_dimension = capacity + min_storage_dimension_kg
-
+            storage_dimension_m3 = storage_dimension / 0.09
 
             energy_demand_year = ENERGY_DEMAND_LIQU * production_profile['production'].sum()
 
-    return InfrastructureData(amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length,
-                              throughput, throughput_m3, throughput_kw, capacity, energy_demand_year)
+    return InfrastructureData(amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length, throughput,
+            throughput_m3, throughput_kw, capacity, energy_demand_year)
 
 
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
 def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, infrastructure):
-
     power_cost_kwh = power_cost / 1000  # von €/MWh zu €/kWh
 
     if do_infrastructure == 'no':
@@ -757,10 +758,10 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             opex_lh2_pump = OPEX_PUMP_RATE * capex_lh2_pump
             opex_compressor = 0
             capex_conversion = capex_lh2_pump + capex_evaporator + capex_liqu
+
     list3 = list(range(0, runtime + 1))
     list4 = [((-1) * opex_transport) for i in range(len(list3))]
     list4[0] = (-1) * capex_transport
-
     # hier soll rein, dass nach X Jahren Komponenten ausgetauscht werden müssen und entsprechend die CaPex nach X Jahren
     # erneut anfallen
     # Jährliche Energiekosten solln in einer Spalte angezeigt werden oder zu den Kosten in Liste 5 addiert werden
@@ -791,8 +792,8 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                 variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
                 efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
                 EEG_expenditure, capex_decrease, opex_decrease,
-                share_input_wind, share_input_pv):
-    output = {"capex_technology": [], "opex_technology": [], "power_cost": [], "efficiency": [],
+                share_input_wind, share_input_pv, x_production):
+    output = {"capex_technology": [], "opex_technology": [], "capex_power": [], "opex_power": [], "efficiency": [],
               "wacc": []}
     for x in range(20):
         factor = (x/10)
@@ -808,12 +809,18 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                                 regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
                                 share_input_wind, share_input_pv)
         output["opex_technology"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost * factor,
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
                                 power_price_series, variable_cost, product_price, input_technology, power_input,
-                                capex_power, opex_power, efficiency, margincost_model, location, wacc, price_change,
+                                capex_power * factor, opex_power, efficiency, margincost_model, location, wacc, price_change,
                                 regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
                                 share_input_wind, share_input_pv)
-        output["power_cost"].append(npv)
+        output["capex_power"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, input_technology, power_input,
+                                capex_power, opex_power * factor, efficiency, margincost_model, location, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                share_input_wind, share_input_pv)
+        output["opex_power"].append(npv)
         _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
                                 power_price_series, variable_cost, product_price, input_technology, power_input,
                                 capex_power, opex_power, efficiency * factor, margincost_model, location, wacc, price_change,
@@ -838,7 +845,7 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
 
 
 def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, infrastructure):
-    output_1 = {"power_cost": [], "storage_dimension": []}
+    output_1 = {"power_cost": [], "capacity": []}
     for x in range(20):
         factor = (x/10)
         _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost * factor,
@@ -847,7 +854,7 @@ def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, pow
         temp = copy.deepcopy(infrastructure)
         temp.capacity *= factor
         _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, temp)
-        output_1["storage_dimension"].append(npv)
+        output_1["capacity"].append(npv)
 
     for name, values in output_1.items():
         plt.plot(values, label=name)
@@ -856,4 +863,3 @@ def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, pow
     plt.legend()
     plt.savefig("static/sensitivity_infra_plot.png")
     plt.close()
-

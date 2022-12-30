@@ -6,7 +6,6 @@ This is OBMETSC, the Open-source Business Model Evaluation Tool
 for Sector Coupling technologies. Developed at the chair
 of Energy and Recource Management at the Technische
 Universität Berlin.
-
 The source code is freely available under MIT license.
 Usage of the model is highly encouraged. Contributing is welcome as well.
 Repository, Documentation, Installation
@@ -32,15 +31,14 @@ when running the web application.
 Installation requirements
 -------------------------
 See `environments.yml` file
-
 @author: Arian Hohgräve (*), Johannes Giehl (*)
 Contributors:
 Joachim Müller-Kirchenbauer
 (*) Corresponding authors
 """
 
-
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from functions import *
@@ -77,7 +75,6 @@ def input():
 # this app route shows the results of the tool and appears when you have submit the input
 @app.route('/output', methods=['GET', 'POST'])
 def get():
-
     # the following variables are getting the informations from the input.html page
     ptx_technology = str(request.form['ptx_technology'])  # ptx /xtp
     capex_technology = float(request.form['capex_technology'])  # inv. Costs €/kW ptx-Anlage
@@ -107,11 +104,14 @@ def get():
     capex_subvention = float(request.form['capex_subvention'])  # %
     opex_subvention = float(request.form['opex_subvention'])  # %
     wacc_input = float(request.form['wacc_input'])  # %
-    product_price = float(request.form['product_price'])  # PtX Energy Carrier Sales Price / XtP Energy Carrier Input Price (EUR/MWh)
+    product_price = float(
+        request.form['product_price'])  # PtX Energy Carrier Sales Price / XtP Energy Carrier Input Price (EUR/MWh)
     runtime = int(request.form['runtime'])  # Lifetime in Years
     do_infrastructure = str(request.form['do_infrastructure'])
-    min_storage_dimension_kwh = float(request.form['min_storage_dimension']) # mit Anmerkung: If Infrastructure is includes, give a Minimum Storeage Dimension. Put 0 for no min. Storage need.
-    storage_time_days = float(request.form['storage_time_days']) # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in days
+    min_storage_dimension_kwh = float(request.form[
+                                          'min_storage_dimension'])  # mit Anmerkung: If Infrastructure is includes, give a Minimum Storeage Dimension. Put 0 for no min. Storage need.
+    storage_time_days = float(request.form[
+                                  'storage_time_days'])  # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in days
 
     # changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)
@@ -130,12 +130,12 @@ def get():
 
     # the values are translated into the variables for the functions, efficiency is set as electrical efficiency
     capex_power_kw = capex_input  # €/kW
-    opex_power_kw = float(opex_input/100)
+    opex_power_kw = float(opex_input / 100)
     capex_technology_kw = capex_technology  # €/kW
-    opex_technology_kw = float(opex_technology/100)
-    efficiency_el = float(efficiency_ele/100)
-    efficiency_q = float(efficiency_th/100)
-    efficiency = float(efficiency_ele/100)
+    opex_technology_kw = float(opex_technology / 100)
+    efficiency_el = float(efficiency_ele / 100)
+    efficiency_q = float(efficiency_th / 100)
+    efficiency = float(efficiency_ele / 100)
     # power_input = float(power_input) * 1000  # MWel in kW
 
     # if input technology is "Grid", there is a zero set as default value for power input and location
@@ -156,19 +156,18 @@ def get():
             renewables = True
             a = output_power_production(input_technology, power_input, location,
                                         share_input_wind, share_input_pv)
-
             sum_power_production = a["wind_production"].sum() + a["pv_production"].sum()
-
             b = dcf_power_production(input_technology, power_input, capex_power, opex_power,
                                      runtime, location, power_cost, power_price_series, wacc, price_change,
                                      share_input_wind, share_input_pv)
         else:
             sum_power_production = 0
-    # the output and DCF for a PtX Technology are calculated (for details: functions.py)
+
+        # the output and DCF for a PtX Technology are calculated (for details: functions.py)
         c = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
                               variable_cost, location, power_input, power_price_series, price_change,
                               share_input_wind, share_input_pv)
-        sum_ptx = c["production"].sum()  # in MWh
+        sum_ptx = c["production"].sum()
         sum_power = c["renewable_demand"].sum() + c["grid_demand"].sum()
         max_ptx = c["production"].max() * 1000
         o2_production = ((c["production"].sum() * 1000) / 33.3) * 8
@@ -182,7 +181,7 @@ def get():
         sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
                     variable_cost, product_price, input_technology, power_input, capex_power, opex_power, efficiency,
                     margincost_model, location, wacc, price_change, regulations_grid_expenditure, EEG_expenditure,
-                    capex_decrease, opex_decrease, share_input_wind, share_input_pv)
+                    capex_decrease, opex_decrease, share_input_wind, share_input_pv, sum_ptx)
         '''sensitivity_PTX = sensitivity_power_to_X(dcf_power_to_x(power_technology, capex_technology, opex_technology,
                                                                 runtime, power_cost, power_price_series,
                                                                 variable_cost, product_price,
@@ -191,13 +190,14 @@ def get():
                                                                 price_change, regulations_grid_expenditure,
                                                                 EEG_expenditure, capex_decrease, opex_decrease,
                                                                 share_input_wind, share_input_pv))'''
-        LCOX = LCOH2(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                    variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
-                    efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
-                    EEG_expenditure, capex_decrease, opex_decrease,
-                    share_input_wind, share_input_pv)
 
-    # the output and DCF for a XtP Technology are calculated (for details: functions.py)
+        LCOX = LCOH2(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
+                     variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
+                     efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
+                     EEG_expenditure, capex_decrease, opex_decrease,
+                     share_input_wind, share_input_pv)
+
+        # the output and DCF for a XtP Technology are calculated (for details: functions.py)
     elif ptx_technology == "X-to-Power":
         e = output_x_to_power(power_cost, power_price_series, power_technology,
                               product_price, efficiency_el, efficiency_q,
@@ -219,17 +219,17 @@ def get():
 
     infrastructure = True
     g = infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology,
-                                     input_technology, efficiency, product_price, margincost_model,
-                                     variable_cost, location,
-                                     power_input, power_cost, power_price_series,
-                                     efficiency_el, efficiency_q, price_change,
-                                     share_input_wind, share_input_pv,
-                                     min_storage_dimension_kg, storage_time_hour)
+                                 input_technology, efficiency, product_price, margincost_model,
+                                 variable_cost, location,
+                                 power_input, power_cost, power_price_series,
+                                 efficiency_el, efficiency_q, price_change,
+                                 share_input_wind, share_input_pv,
+                                 min_storage_dimension_kg, storage_time_hour)
 
     h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
     sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
 
-# a graphic is created from the power production profile
+    # a graphic is created from the power production profile
     if input_technology in list_pp and ptx_technology in list_ptx:
         plt.figure(0)
         plt.plot('time', 'pv_production', data=a, marker='', color='skyblue', linewidth=1)
@@ -239,8 +239,8 @@ def get():
 
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, max_ptx=max_ptx,
                            column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
-                           o2_production=o2_production,
-                           Levelised_Cost=round(LCOX, 2), sum_power_production=sum_power_production,
+                           Levelised_Cost=round(LCOX, 2), o2_production=o2_production,
+                           sum_power_production=sum_power_production, power_technology=power_technology,
                            sum_power=sum_power, renewables=renewables, ptx_technology=ptx_technology,
                            column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),
                            infrastructure=infrastructure, npv_infrastructure=h[1], zip=zip)
@@ -248,5 +248,6 @@ def get():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
