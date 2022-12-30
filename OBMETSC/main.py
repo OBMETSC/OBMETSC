@@ -43,6 +43,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from functions import *
 from flask import Flask, render_template, request
+from plots import create_and_save_plots
 
 # the lists are necessary to make if-else-actions depending on the technology
 list_ptx = ["Power-to-X"]  # Power-to-X technologies
@@ -151,6 +152,7 @@ def get():
 
     # the value "renewables" is a True/False-variable that is important for frontend-html: If renewables true, the renewable energy production is shown as a figure
     renewables = False
+    dcf_power_expenditure = 1
     if ptx_technology == "Power-to-X":
         if input_technology in list_pp:  # if the input technology is a production plant, the output and dcf are calculated
             renewables = True
@@ -159,6 +161,7 @@ def get():
             b = dcf_power_production(input_technology, power_input, capex_power, opex_power, runtime, location,
                                      power_cost, power_price_series, wacc, price_change, share_input_wind,
                                      share_input_pv)
+            dcf_power_expenditure = b[0]["expenditure"]
         else:
             sum_power_production = 0
 
@@ -174,12 +177,13 @@ def get():
 
         d = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
                            variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
-                           EEG_expenditure, capex_decrease, opex_decrease, c, b[0]["expenditure"])
-        sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                    variable_cost, product_price, wacc, price_change, regulations_grid_expenditure, EEG_expenditure,
-                    capex_decrease, opex_decrease, c, b[0]["expenditure"])
+                           EEG_expenditure, capex_decrease, opex_decrease, c, dcf_power_expenditure)
 
-        LCOX = LCOH2(runtime, wacc, c, d)
+        sens_ptx = sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
+                    variable_cost, product_price, wacc, price_change, regulations_grid_expenditure, EEG_expenditure,
+                    capex_decrease, opex_decrease, copy.deepcopy(c), dcf_power_expenditure)
+
+        LCOX = LCOH2(runtime, wacc, c, copy.deepcopy(d))
 
         # the output and DCF for a XtP Technology are calculated (for details: functions.py)
     elif ptx_technology == "X-to-Power":
@@ -206,15 +210,9 @@ def get():
                                  share_input_wind, share_input_pv, min_storage_dimension_kg, storage_time_hour)
 
     h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
-    sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
+    sens_infra = sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, copy.deepcopy(g))
 
-    # a graphic is created from the power production profile
-    if input_technology in list_pp and ptx_technology in list_ptx:
-        plt.figure(0)
-        plt.plot('time', 'pv_production', data=a, marker='', color='skyblue', linewidth=1)
-        plt.plot('time', 'wind_production', data=a, marker='', color='olive', linewidth=1)
-        plt.legend()
-        plt.savefig('static/power_production_plot.png')
+    create_and_save_plots(input_technology, list_pp, ptx_technology, list_ptx, a, sens_ptx, sens_infra)
 
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, max_ptx=max_ptx,
                            column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
