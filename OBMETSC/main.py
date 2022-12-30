@@ -167,21 +167,22 @@ def get():
         c = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
                               variable_cost, location, power_input, power_price_series, price_change,
                               share_input_wind, share_input_pv)
-        sum_ptx = c["production"].sum()
-        sum_power = c["renewable_demand"].sum() + c["grid_demand"].sum()
-        max_ptx = c["production"].max() * 1000
-        o2_production = ((c["production"].sum() * 1000) / 33.3) * 8
+        sum_ptx = sum(c.production)
+        sum_ptx_200 = sum([x*2 for x in c.production])
+        sum_power = sum(c.renewable_demand) + sum(c.grid_demand)
+        max_ptx = max(c.production) * 1000
+        o2_production = ((sum(c.production) * 1000) / 33.3) * 8
 
         d = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
                            power_cost, power_price_series, variable_cost, product_price,
-                           input_technology, power_input, capex_power,
-                           opex_power, efficiency, margincost_model, location, wacc, price_change,
+                           wacc, price_change,
                            regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                           share_input_wind, share_input_pv)
-        sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                    variable_cost, product_price, input_technology, power_input, capex_power, opex_power, efficiency,
-                    margincost_model, location, wacc, price_change, regulations_grid_expenditure, EEG_expenditure,
-                    capex_decrease, opex_decrease, share_input_wind, share_input_pv, sum_ptx)
+                           c, b[0]["expenditure"])
+        sensitivity(power_technology, capex_technology, opex_technology, runtime,
+                           power_cost, power_price_series, variable_cost, product_price,
+                           wacc, price_change,
+                           regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                           c, b[0]["expenditure"])
         '''sensitivity_PTX = sensitivity_power_to_X(dcf_power_to_x(power_technology, capex_technology, opex_technology,
                                                                 runtime, power_cost, power_price_series,
                                                                 variable_cost, product_price,
@@ -191,11 +192,7 @@ def get():
                                                                 EEG_expenditure, capex_decrease, opex_decrease,
                                                                 share_input_wind, share_input_pv))'''
 
-        LCOX = LCOH2(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                     variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
-                     efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
-                     EEG_expenditure, capex_decrease, opex_decrease,
-                     share_input_wind, share_input_pv)
+        LCOX = LCOH2(runtime, wacc, c, d)
 
         # the output and DCF for a XtP Technology are calculated (for details: functions.py)
     elif ptx_technology == "X-to-Power":
@@ -239,7 +236,7 @@ def get():
 
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, max_ptx=max_ptx,
                            column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
-                           Levelised_Cost=round(LCOX, 2), o2_production=o2_production,
+                           Levelised_Cost=round(LCOX, 2), o2_production=o2_production, sum_ptx_200=sum_ptx_200,
                            sum_power_production=sum_power_production, power_technology=power_technology,
                            sum_power=sum_power, renewables=renewables, ptx_technology=ptx_technology,
                            column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),

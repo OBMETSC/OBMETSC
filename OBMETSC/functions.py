@@ -22,6 +22,7 @@ from matplotlib.ticker import PercentFormatter
 import copy
 from dataclasses import dataclass
 from databank import *
+from typing import List
 
 
 #gas_flow_hour in m3/h für die unterschiedlichen Pipelines im VNB
@@ -97,6 +98,14 @@ class InfrastructureData:
     throughput_kw: float
     capacity: int
     energy_demand_year: float
+
+@dataclass
+class XProductionData:
+    time: List[int]
+    production: List[float]
+    renewable_demand: List[float]
+    grid_demand: List[float]
+    power_production: List[float]
 
 
 # Function calculates the production profile for a renewable energy plant
@@ -267,9 +276,10 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
             power_production = pd.DataFrame({'power_production': power_production1})
             grid_demand1 = (x_production3['production'] / efficiency) - re_demand
             grid_demand = pd.DataFrame({'grid_demand': grid_demand1})
-            x_production = pd.DataFrame(
-                {"time": list1, "production": x_production3['production'], "renewable_demand": re_demand,
-                 "grid_demand": grid_demand['grid_demand'], "power_production": power_production['power_production']})
+            x_production = XProductionData(time=list1, production=x_production3['production'],
+                                           renewable_demand=re_demand,
+                                           grid_demand=grid_demand['grid_demand'],
+                                           power_production=power_production['power_production'])
         elif margincost_model == "no":
             list3 = list1.copy()
             list3[0:8760] = [(power_technology * efficiency) for i in list3[0:8760]]
@@ -277,31 +287,13 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
             re_demand = output_pp
             grid_demand1 = (x_production3['production'] / efficiency) - re_demand
             grid_demand = pd.DataFrame({'grid_demand': grid_demand1})
-            x_production = pd.DataFrame(
-                {"time": list1, "production": x_production3['production'], "renewable_demand": re_demand,
-                 "grid_demand": grid_demand['grid_demand'],"power_production": list2})
+            x_production = XProductionData(time=list1, production=x_production3['production'], renewable_demand=re_demand,
+                                           grid_demand=grid_demand['grid_demand'], power_production=list2)
 
     return x_production
 
 
-def LCOH2(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                   variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
-                   efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
-                   EEG_expenditure, capex_decrease, opex_decrease,
-                   share_input_wind, share_input_pv):
-
-    # get the production profile of the plant
-    plant_production = output_power_to_x(power_technology, input_technology, efficiency, product_price,
-                      margincost_model, variable_cost, location, power_input,
-                      power_price_series, price_change,
-                      share_input_wind, share_input_pv)
-
-    # get the discounted cash flow of the plant
-    power_to_x_dcf = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                    power_price_series, variable_cost, product_price, input_technology, power_input,
-                                    capex_power, opex_power, efficiency, margincost_model, location, wacc,
-                                    price_change, regulations_grid_expenditure, EEG_expenditure, capex_decrease,
-                                    opex_decrease, share_input_wind, share_input_pv)
+def LCOH2(runtime, wacc, plant_production, power_to_x_dcf):
 
     # calculate the annuity factor for given runtime and wacc
     annuity_factor = (((1+wacc)**runtime)-1) / (((1+wacc)**runtime)*wacc)
@@ -317,9 +309,8 @@ def LCOH2(power_technology, capex_technology, opex_technology, runtime, power_co
     total_discounted_cost = (total_investment + annual_cost) * -1
 
     # calculate the discounted production based on the plant productin profile
-    x_production = plant_production["production"]
-    discounted_production = x_production.sum() * annuity_factor
-    flh = x_production.sum()/power_technology
+    x_production = plant_production.production
+    discounted_production = sum(x_production) * annuity_factor
 
     # claculate the levelised cost
     Levelized_cost = total_discounted_cost / discounted_production
@@ -329,19 +320,8 @@ def LCOH2(power_technology, capex_technology, opex_technology, runtime, power_co
 
 # Function calculates the profitability (NPV and cash flows over runtime) for the designed Power-to-X plant
 def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                   variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
-                   efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
-                   EEG_expenditure, capex_decrease, opex_decrease,
-                   share_input_wind, share_input_pv):
-
-    if input_technology != "Grid":
-        dcf_power = dcf_power_production(input_technology, power_input, capex_power, opex_power, runtime,
-                                         location, power_cost, power_price_series,
-                                         wacc, price_change, share_input_wind, share_input_pv)[0]
-
-    output_ptx = output_power_to_x(power_technology, input_technology, efficiency, product_price, margincost_model,
-                      variable_cost, location, power_input, power_price_series, price_change,
-                      share_input_wind, share_input_pv)
+                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure):
 
     list1 = list(range(0, 8760))
     list1[0:8760] = [int(0) for i in list1[0:8760]]
@@ -360,17 +340,17 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
         list2[0:8760] = [float(power_cost) for i in list2[0:8760]]
         power_cost = pd.DataFrame({"price": list2})
 
-    grid_cost = power_cost['price'] * output_ptx['grid_demand']
-    variable_cost1 = variable_cost * output_ptx['production']
+    grid_cost = power_cost['price'] * output_ptx.grid_demand
+    variable_cost1 = variable_cost * output_ptx.production
     x_production_cost1 = pd.DataFrame({"production_costs": (variable_cost1 + grid_cost)})
     x_production_cost = x_production_cost1['production_costs']
     # According to current research: 40% EGG for own use, 100% for grid purchase.
-    variable_regulations_cost_1 = (-0.4) * EEG_expenditure * output_ptx['renewable_demand'].sum()
-    variable_regulations_cost_2 = (-1) * (EEG_expenditure + regulations_grid_expenditure) * output_ptx['grid_demand'].sum()
+    variable_regulations_cost_1 = (-0.4) * EEG_expenditure * sum(output_ptx.renewable_demand)
+    variable_regulations_cost_2 = (-1) * (EEG_expenditure + regulations_grid_expenditure) * sum(output_ptx.grid_demand)
 
     # Here below: If wind or PV were used, then the costs from wind and PV are added
-    if output_ptx["renewable_demand"].sum() > 0:
-        power_production_cost = (-1) * dcf_power['expenditure']
+    if sum(output_ptx.renewable_demand) > 0:
+        power_production_cost = (-1) * dcf_power_expenditure
     else:
         list1 = list(range(0, runtime + 1))
         power_production_cost = list1.copy()
@@ -381,8 +361,8 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     regulations_cost = [(variable_regulations_cost_1 + variable_regulations_cost_2) for i in regulations_cost]
     regulations_cost[0] = 0
 
-    revenue = product_price * output_ptx['production']
-    revenue_power = output_ptx['power_production'] * power_cost['price']
+    revenue = product_price * output_ptx.production
+    revenue_power = output_ptx.power_production * power_cost['price']
 
     list3 = list(range(0, runtime + 1))
 
@@ -789,51 +769,33 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
 
 
 def sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
-                efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
-                EEG_expenditure, capex_decrease, opex_decrease,
-                share_input_wind, share_input_pv, x_production):
-    output = {"capex_technology": [], "opex_technology": [], "capex_power": [], "opex_power": [], "efficiency": [],
-              "wacc": []}
+                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure):
+    output = {"capex_technology": [], "opex_technology": [], "power_expenditure": [], "wacc": [], "flh": []}
     for x in range(20):
         factor = (x/10)
-        _, npv = dcf_power_to_x(power_technology, capex_technology * factor, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, input_technology, power_input,
-                                capex_power, opex_power, efficiency, margincost_model, location, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                share_input_wind, share_input_pv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology * factor, opex_technology, runtime, power_cost, power_price_series,
+                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure)
         output["capex_technology"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology * factor, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, input_technology, power_input,
-                                capex_power, opex_power, efficiency, margincost_model, location, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                share_input_wind, share_input_pv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology * factor, runtime, power_cost, power_price_series,
+                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure)
         output["opex_technology"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, input_technology, power_input,
-                                capex_power * factor, opex_power, efficiency, margincost_model, location, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                share_input_wind, share_input_pv)
-        output["capex_power"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, input_technology, power_input,
-                                capex_power, opex_power * factor, efficiency, margincost_model, location, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                share_input_wind, share_input_pv)
-        output["opex_power"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, input_technology, power_input,
-                                capex_power, opex_power, efficiency * factor, margincost_model, location, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                share_input_wind, share_input_pv)
-        output["efficiency"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, input_technology, power_input,
-                                capex_power, opex_power, efficiency, margincost_model, location, wacc * factor, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                share_input_wind, share_input_pv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
+                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure * factor)
+        output["power_expenditure"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
+                   variable_cost, product_price, wacc*factor, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure)
         output["wacc"].append(npv)
-
+        temp = copy.deepcopy(output_ptx)
+        temp.production = [x*factor for x in temp.production]
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
+                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
+                   EEG_expenditure, capex_decrease, opex_decrease, temp, dcf_power_expenditure)
+        output["flh"].append(npv)
     for name, values in output.items():
        plt.plot(values, label=name)
     plt.xticks(np.arange(0,21,2.5),['0%','25%','50%','75%','100%','125%','150%','175%','200%'])
