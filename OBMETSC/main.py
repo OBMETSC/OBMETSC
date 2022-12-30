@@ -154,12 +154,11 @@ def get():
     if ptx_technology == "Power-to-X":
         if input_technology in list_pp:  # if the input technology is a production plant, the output and dcf are calculated
             renewables = True
-            a = output_power_production(input_technology, power_input, location,
-                                        share_input_wind, share_input_pv)
+            a = output_power_production(input_technology, power_input, location, share_input_wind, share_input_pv)
             sum_power_production = a["wind_production"].sum() + a["pv_production"].sum()
-            b = dcf_power_production(input_technology, power_input, capex_power, opex_power,
-                                     runtime, location, power_cost, power_price_series, wacc, price_change,
-                                     share_input_wind, share_input_pv)
+            b = dcf_power_production(input_technology, power_input, capex_power, opex_power, runtime, location,
+                                     power_cost, power_price_series, wacc, price_change, share_input_wind,
+                                     share_input_pv)
         else:
             sum_power_production = 0
 
@@ -173,35 +172,21 @@ def get():
         max_ptx = max(c.production) * 1000
         o2_production = ((sum(c.production) * 1000) / 33.3) * 8
 
-        d = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
-                           power_cost, power_price_series, variable_cost, product_price,
-                           wacc, price_change,
-                           regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                           c, b[0]["expenditure"])
-        sensitivity(power_technology, capex_technology, opex_technology, runtime,
-                           power_cost, power_price_series, variable_cost, product_price,
-                           wacc, price_change,
-                           regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                           c, b[0]["expenditure"])
-        '''sensitivity_PTX = sensitivity_power_to_X(dcf_power_to_x(power_technology, capex_technology, opex_technology,
-                                                                runtime, power_cost, power_price_series,
-                                                                variable_cost, product_price,
-                                                                input_technology, power_input, capex_power, opex_power,
-                                                                efficiency, margincost_model, location, wacc,
-                                                                price_change, regulations_grid_expenditure,
-                                                                EEG_expenditure, capex_decrease, opex_decrease,
-                                                                share_input_wind, share_input_pv))'''
+        d = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
+                           variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
+                           EEG_expenditure, capex_decrease, opex_decrease, c, b[0]["expenditure"])
+        sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
+                    variable_cost, product_price, wacc, price_change, regulations_grid_expenditure, EEG_expenditure,
+                    capex_decrease, opex_decrease, c, b[0]["expenditure"])
 
         LCOX = LCOH2(runtime, wacc, c, d)
 
         # the output and DCF for a XtP Technology are calculated (for details: functions.py)
     elif ptx_technology == "X-to-Power":
-        e = output_x_to_power(power_cost, power_price_series, power_technology,
-                              product_price, efficiency_el, efficiency_q,
-                              margincost_model, variable_cost, price_change)
-        d = dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime,
-                           product_price, variable_cost, power_cost, power_price_series, heat_cost,
-                           efficiency_el, efficiency_q,
+        e = output_x_to_power(power_cost, power_price_series, power_technology, product_price, efficiency_el,
+                              efficiency_q, margincost_model, variable_cost, price_change)
+        d = dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime, product_price, variable_cost,
+                           power_cost, power_price_series, heat_cost, efficiency_el, efficiency_q,
                            margincost_model, wacc, price_change, capex_decrease, opex_decrease)
 
     # If additional infrastructure for gaseous energy carriers is to be built, the dimensioning and costs are issued here
@@ -216,12 +201,9 @@ def get():
 
     infrastructure = True
     g = infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology,
-                                 input_technology, efficiency, product_price, margincost_model,
-                                 variable_cost, location,
-                                 power_input, power_cost, power_price_series,
-                                 efficiency_el, efficiency_q, price_change,
-                                 share_input_wind, share_input_pv,
-                                 min_storage_dimension_kg, storage_time_hour)
+                                 input_technology, efficiency, product_price, margincost_model, variable_cost, location,
+                                 power_input, power_cost, power_price_series, efficiency_el, efficiency_q, price_change,
+                                 share_input_wind, share_input_pv, min_storage_dimension_kg, storage_time_hour)
 
     h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
     sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)

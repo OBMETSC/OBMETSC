@@ -769,33 +769,38 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
 
 
 def sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
-                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure):
-    output = {"capex_technology": [], "opex_technology": [], "power_expenditure": [], "wacc": [], "flh": []}
+                variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
+                EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure):
+    output = {"CapEx-PEM-ELektolyseur": [], "OpEx-PEM-ELektolyseur": [], "Stromkosten": [], "WACC": [], "VLS": []}
     for x in range(20):
         factor = (x/10)
-        _, npv = dcf_power_to_x(power_technology, capex_technology * factor, opex_technology, runtime, power_cost, power_price_series,
-                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
-                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure)
-        output["capex_technology"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology * factor, runtime, power_cost, power_price_series,
-                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
-                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure)
-        output["opex_technology"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
-                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure * factor)
-        output["power_expenditure"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                   variable_cost, product_price, wacc*factor, price_change, regulations_grid_expenditure,
-                   EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure)
-        output["wacc"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology * factor, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                output_ptx, dcf_power_expenditure)
+        output["CapEx-PEM-ELektolyseur"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology * factor, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                output_ptx, dcf_power_expenditure)
+        output["OpEx-PEM-ELektolyseur"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                output_ptx, dcf_power_expenditure * factor)
+        output["Stromkosten"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, wacc*factor, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                output_ptx, dcf_power_expenditure)
+        output["WACC"].append(npv)
         temp = copy.deepcopy(output_ptx)
         temp.production = [x*factor for x in temp.production]
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                   variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
-                   EEG_expenditure, capex_decrease, opex_decrease, temp, dcf_power_expenditure)
-        output["flh"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease, temp,
+                                dcf_power_expenditure)
+        output["VLS"].append(npv)
     for name, values in output.items():
        plt.plot(values, label=name)
     plt.xticks(np.arange(0,21,2.5),['0%','25%','50%','75%','100%','125%','150%','175%','200%'])
