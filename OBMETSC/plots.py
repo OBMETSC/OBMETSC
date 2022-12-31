@@ -13,6 +13,7 @@ def create_and_save_plots(input_technology: str, list_pp: List[str], ptx_technol
         plt.legend()
         plt.savefig('static/power_production_plot.png')
         plt.close()
+
     plt.figure(1)
     for name, values in sens_ptx.items():
        plt.plot(values, label=name)

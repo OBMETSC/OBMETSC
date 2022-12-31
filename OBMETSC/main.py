@@ -212,11 +212,20 @@ def get():
     h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
     sens_infra = sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, copy.deepcopy(g))
 
-    create_and_save_plots(input_technology, list_pp, ptx_technology, list_ptx, a, sens_ptx, sens_infra)
+    LCOT = LCOI(runtime, wacc, c, copy.deepcopy(h))
+
+    # a graphic is created from the power production profile
+    if input_technology in list_pp and ptx_technology in list_ptx:
+        plt.figure(0)
+        plt.plot('time', 'pv_production', data=a, marker='', color='skyblue', linewidth=1)
+        plt.plot('time', 'wind_production', data=a, marker='', color='olive', linewidth=1)
+        plt.legend()
+        plt.savefig('static/power_production_plot.png')
+        plt.close()
 
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, max_ptx=max_ptx,
                            column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
-                           Levelised_Cost=round(LCOX, 2), o2_production=o2_production, sum_ptx_200=sum_ptx_200,
+                           Levelised_Cost=round(LCOX, 2), Levelized_cost_infra=round(LCOT, 2), o2_production=o2_production, sum_ptx_200=sum_ptx_200,
                            sum_power_production=sum_power_production, power_technology=power_technology,
                            sum_power=sum_power, renewables=renewables, ptx_technology=ptx_technology,
                            column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),

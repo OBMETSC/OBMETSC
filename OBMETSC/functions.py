@@ -750,7 +750,7 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
     list5[0] = (-1) * capex_conversion
 
     list6 = [((-1) * (opex_storage + opex_onsite_storage)) for _ in range(len(list3))]
-    list6[0] = capex_storage + capex_onsite_storage
+    list6[0] = (-1) * (capex_storage + capex_onsite_storage)
 
     infrastructure_dcf = pd.DataFrame({"year": list3, "expenditure_transport": list4,
                                        "expenditure_conversion": list5, "expenditure_storage": list6})
@@ -767,6 +767,28 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
 
     return infrastructure_dcf, npv
 
+def LCOI(runtime, wacc, plant_production, infrastructure_dcf):
+
+    # calculate the annuity factor for given runtime and wacc
+    annuity_factor = (((1+wacc)**runtime)-1) / (((1+wacc)**runtime)*wacc)
+
+    # access only the cost columns of the dcf dataframe
+    cost_df = infrastructure_dcf[0]
+
+    # calculate the investment cost and discoutned annual cost based on the reduces dcf dataframe
+    total_investment = cost_df.loc[0].sum()
+
+    annual_cost = cost_df.loc[1].sum() * annuity_factor
+    total_discounted_cost = (total_investment + annual_cost) * -1
+
+    # calculate the discounted production based on the plant productin profile
+    x_production = plant_production.production
+    discounted_production = sum(x_production) * annuity_factor
+
+    # claculate the levelised cost
+    Levelized_cost_infra = total_discounted_cost / discounted_production
+
+    return Levelized_cost_infra
 
 def sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
                 variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
@@ -802,7 +824,15 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                                 dcf_power_expenditure)
         output["VLS"].append(npv)
     return output
-
+    plt.figure(1)
+    for name, values in sens_ptx.items():
+       plt.plot(values, label=name)
+    plt.xticks(np.arange(0,21,2.5),['0%','25%','50%','75%','100%','125%','150%','175%','200%'])
+    plt.ylabel('Net Present Value [€]')
+    plt.xlabel('Change')
+    plt.legend()
+    plt.savefig("static/sensitivity_plot.png")
+    plt.close()
 
 def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, infrastructure):
     output_1 = {"power_cost": [], "capacity": []}
@@ -816,3 +846,11 @@ def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, pow
         _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, temp)
         output_1["capacity"].append(npv)
     return output_1
+    plt.figure(2)
+    for name, values in sens_infra.items():
+        plt.plot(values, label=name)
+    plt.ylabel('Net Present Value [€]')
+    plt.xlabel('Change')
+    plt.legend()
+    plt.savefig("static/sensitivity_infra_plot.png")
+    plt.close()
