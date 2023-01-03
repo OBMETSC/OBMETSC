@@ -43,7 +43,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from functions import *
 from flask import Flask, render_template, request
-from plots import create_and_save_plots
+# from plots import create_and_save_plots
 
 # the lists are necessary to make if-else-actions depending on the technology
 list_ptx = ["Power-to-X"]  # Power-to-X technologies
@@ -209,8 +209,9 @@ def get():
                                  power_input, power_cost, power_price_series, efficiency_el, efficiency_q, price_change,
                                  share_input_wind, share_input_pv, min_storage_dimension_kg, storage_time_hour)
 
-    h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, g)
-    sens_infra = sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, copy.deepcopy(g))
+    h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, g)
+    sens_infra = sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance,
+                                   copy.deepcopy(g))
 
     LCOT = LCOI(runtime, wacc, c, copy.deepcopy(h))
 

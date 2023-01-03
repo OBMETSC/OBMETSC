@@ -98,6 +98,8 @@ class InfrastructureData:
     throughput_kw: float
     capacity: int
     energy_demand_year: float
+    transport_time: float
+    amount_tours_year: int
 
 @dataclass
 class XProductionData:
@@ -223,7 +225,7 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
             x_production3 = pd.DataFrame({"production": x_production1 + x_production2})
             re_demand = x_production3['production'] / efficiency
             power_production = output_pp - re_demand
-            output_ptx  = pd.DataFrame(
+            output_ptx = pd.DataFrame(
                 {"time": list1, "production": x_production3['production'], "renewable_demand": re_demand,
                  "grid_demand": list2, "power_production": power_production})
         elif margincost_model == "no":
@@ -236,7 +238,7 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
             x_production3 = pd.DataFrame({"production": x_production1 + x_production2})
             re_demand = x_production3['production'] / efficiency
             power_production = output_pp - re_demand
-            output_ptx  = pd.DataFrame(
+            output_ptx = pd.DataFrame(
                 {"time": list1, "production": x_production3['production'], "renewable_demand": re_demand,
                  "grid_demand": list2, "power_production": power_production})
 
@@ -246,7 +248,7 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
             comparison_margincost2 = pd.DataFrame({'production': comparison_margincost1})
             x_production3 = pd.DataFrame({'production': (comparison_margincost2['production'] * efficiency * power_technology)})
             grid_demand = x_production3['production'] / efficiency
-            output_ptx  = pd.DataFrame(
+            output_ptx = pd.DataFrame(
                 {"time": list1, "production": x_production3['production'], "renewable_demand": list2,
                  "grid_demand": grid_demand, "power_production": list2})
 
@@ -276,10 +278,10 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
             power_production = pd.DataFrame({'power_production': power_production1})
             grid_demand1 = (x_production3['production'] / efficiency) - re_demand
             grid_demand = pd.DataFrame({'grid_demand': grid_demand1})
-            output_ptx  = XProductionData(time=list1, production=x_production3['production'],
-                                           renewable_demand=re_demand,
-                                           grid_demand=grid_demand['grid_demand'],
-                                           power_production=power_production['power_production'])
+            output_ptx = XProductionData(time=list1, production=x_production3['production'],
+                                         renewable_demand=re_demand,
+                                         grid_demand=grid_demand['grid_demand'],
+                                         power_production=power_production['power_production'])
         elif margincost_model == "no":
             list3 = list1.copy()
             list3[0:8760] = [(power_technology * efficiency) for i in list3[0:8760]]
@@ -575,6 +577,8 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             transport_pressure = 0
             capacity = 0
             energy_demand_year = 0
+            transport_time = 0
+            amount_tours_year = 0
 
         if infrastructure_type == "Tubetrailer":
             amount_trailer = 1
@@ -630,11 +634,11 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             energy_demand_year = ENERGY_DEMAND_LIQU * production_profile['production'].sum()
 
     return InfrastructureData(amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length, throughput,
-            throughput_m3, throughput_kw, capacity, energy_demand_year)
+            throughput_m3, throughput_kw, capacity, energy_demand_year, transport_time, amount_tours_year)
 
 
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
-def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, infrastructure):
+def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, infrastructure):
     power_cost_kwh = power_cost / 1000  # von €/MWh zu €/kWh
 
     if do_infrastructure == 'no':
@@ -656,6 +660,8 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
         opex_lh2_pump = 0
         capex_conversion = capex_compressor
         capex_transport = 0
+        driver_cost = 0
+        fuel_cost = 0
 
     else:
         if infrastructure_type == "Pipeline":
@@ -690,11 +696,13 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             capex_trailer = 0
             capex_transport = capex_pipe
             capex_conversion = capex_gdrma
+            driver_cost = 0
+            fuel_cost = 0
 
         if infrastructure_type == "Tubetrailer":
-            onsite_storage_m3 = infrastructure.onsite_storage / 14
-            capex_onsite_storage = onsite_storage_m3 * CAPEX_STORAGE_CH2_EURO_PRO_M3
-            opex_onsite_storage = capex_onsite_storage * OPEX_STORAGE_RATE
+            # onsite_storage_m3 = infrastructure.onsite_storage / 14
+            # capex_onsite_storage = onsite_storage_m3 * CAPEX_STORAGE_CH2_EURO_PRO_M3
+            # opex_onsite_storage = capex_onsite_storage * OPEX_STORAGE_RATE
             # capex_storage = infrastructure.storage_dimension * CAPEX_STORAGE_CH2_EURO_PRO_KG
             storage_dimension_m3 = infrastructure.storage_dimension / 14
             capex_storage = storage_dimension_m3 * CAPEX_STORAGE_CH2_EURO_PRO_M3
@@ -719,10 +727,12 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             opex_evaporator = 0
             opex_lh2_pump = 0
             capex_conversion = capex_compressor
+            driver_cost = (infrastructure.transport_time * 35) * infrastructure.amount_tours_year
+            fuel_cost = ((distance/100) * 34.5 * 2) * infrastructure.amount_tours_year
 
         if infrastructure_type == "LNG":
-            capex_onsite_storage = infrastructure.onsite_storage * CAPEX_STORAGE_LH2_EURO_PRO_KG
-            opex_onsite_storage = capex_onsite_storage * OPEX_STORAGE_RATE
+            # capex_onsite_storage = infrastructure.onsite_storage * CAPEX_STORAGE_LH2_EURO_PRO_KG
+            # opex_onsite_storage = capex_onsite_storage * OPEX_STORAGE_RATE
             capex_storage = infrastructure.storage_dimension * CAPEX_STORAGE_LH2_EURO_PRO_KG
             opex_storage = OPEX_STORAGE_RATE * capex_storage
             capex_trailer = infrastructure.amount_trailer * CAPEX_TRAILER_LH2 * infrastructure.capacity
@@ -738,9 +748,11 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
             opex_lh2_pump = OPEX_PUMP_RATE * capex_lh2_pump
             opex_compressor = 0
             capex_conversion = capex_lh2_pump + capex_evaporator + capex_liqu
+            driver_cost = (infrastructure.transport_time * 35) * infrastructure.amount_tours_year
+            fuel_cost = ((distance/100) * 34.5 * 2) * infrastructure.amount_tours_year
 
     list3 = list(range(0, runtime + 1))
-    list4 = [((-1) * opex_transport) for i in range(len(list3))]
+    list4 = [((-1) * (opex_transport + driver_cost + fuel_cost)) for i in range(len(list3))]
     list4[0] = (-1) * capex_transport
     # hier soll rein, dass nach X Jahren Komponenten ausgetauscht werden müssen und entsprechend die CaPex nach X Jahren
     # erneut anfallen
@@ -749,8 +761,8 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
     list5 = [((-1) * (opex_compressor + opex_liqu + opex_evaporator + opex_lh2_pump)) for _ in range(len(list3))]
     list5[0] = (-1) * capex_conversion
 
-    list6 = [((-1) * (opex_storage + opex_onsite_storage)) for _ in range(len(list3))]
-    list6[0] = (-1) * (capex_storage + capex_onsite_storage)
+    list6 = [((-1) * (opex_storage)) for _ in range(len(list3))]
+    list6[0] = (-1) * (capex_storage)
 
     infrastructure_dcf = pd.DataFrame({"year": list3, "expenditure_transport": list4,
                                        "expenditure_conversion": list5, "expenditure_storage": list6})
@@ -834,17 +846,19 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
     plt.savefig("static/sensitivity_plot.png")
     plt.close()
 
-def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, infrastructure):
-    output_1 = {"power_cost": [], "capacity": []}
+
+def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, infrastructure):
+    output_1 = {"WACC": [], "Pipelinelänge": []}
     for x in range(20):
         factor = (x/10)
-        _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost * factor,
-                                    infrastructure)
-        output_1["power_cost"].append(npv)
+        _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc * factor, power_cost,
+                                    distance, infrastructure)
+        output_1["WACC"].append(npv)
         temp = copy.deepcopy(infrastructure)
-        temp.capacity *= factor
-        _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, temp)
-        output_1["capacity"].append(npv)
+        temp.pipe_length *= factor
+        _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost,  distance,
+                                    temp)
+        output_1["Pipelinelänge"].append(npv)
     return output_1
     plt.figure(2)
     for name, values in sens_infra.items():
