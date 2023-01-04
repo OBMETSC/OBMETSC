@@ -129,6 +129,7 @@ def get():
     min_storage_dimension_kg = min_storage_dimension_kwh / 33.3
     storage_time_hour = storage_time_days * 24
 
+
     # the values are translated into the variables for the functions, efficiency is set as electrical efficiency
     capex_power_kw = capex_input  # €/kW
     opex_power_kw = float(opex_input / 100)
@@ -184,7 +185,7 @@ def get():
                     capex_decrease, opex_decrease, copy.deepcopy(c), dcf_power_expenditure)
 
         LCOX = LCOH2(runtime, wacc, c, copy.deepcopy(d))
-
+        sens_lcox = sens_LCOH2(runtime, wacc, sum_ptx, copy.deepcopy(d))
         # the output and DCF for a XtP Technology are calculated (for details: functions.py)
     elif ptx_technology == "X-to-Power":
         e = output_x_to_power(power_cost, power_price_series, power_technology, product_price, efficiency_el,
@@ -209,12 +210,12 @@ def get():
                                  power_input, power_cost, power_price_series, efficiency_el, efficiency_q, price_change,
                                  share_input_wind, share_input_pv, min_storage_dimension_kg, storage_time_hour)
 
-    h = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, g)
-    sens_infra = sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance,
-                                   copy.deepcopy(g))
+    h = dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, g)
+    # sens_infra = sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance,
+                                  # copy.deepcopy(g))
 
-    LCOT = LCOI(runtime, wacc, c, copy.deepcopy(h))
-
+    LCOT = LCOI(runtime, wacc, sum_ptx, h)
+    sens_lcoi = sensitivity_LCOI(runtime, wacc, sum_ptx, copy.deepcopy(h))
     # a graphic is created from the power production profile
     if input_technology in list_pp and ptx_technology in list_ptx:
         plt.figure(0)

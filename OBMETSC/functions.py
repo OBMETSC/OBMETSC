@@ -31,6 +31,7 @@ GAS_FLOW_HOUR_2 = 81.73
 GAS_FLOW_HOUR_3 = 801.49
 GAS_FLOW_HOUR_4 = 3205.94
 
+
 CAPEX_PIPE_1 = 400000  # in €/km (DN25/DP1)
 CAPEX_PIPE_2 = 400000  # (DN32/DP1)
 CAPEX_PIPE_3 = 850000  # (DN100/DP4)
@@ -568,12 +569,15 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()  # only if storage_dimension > 0
         else:
             energy_demand_year = 0
+        transport_time = 0
+        amount_tours_year = 0
+
     else:
         if infrastructure_type == "Pipeline":
             storage_dimension = 0
             onsite_storage = 0
             amount_trailer = 0
-            pipe_length = int(distance)
+            pipe_length = float(distance)
             transport_pressure = 0
             capacity = 0
             energy_demand_year = 0
@@ -585,7 +589,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             pipe_length = 0
             loading_time = 1.5
             speed = 50
-            transport_time = 2 * (int(distance) / int(speed)) + 2 * (int(loading_time))
+            transport_time = 2 * (float(distance) / float(speed)) + 2 * (float(loading_time))
             if production_profile['production'].sum() < 36 * CAPACITY_TUBETRAILER_1:
                 capacity = CAPACITY_TUBETRAILER_1
                 transport_pressure = 200
@@ -618,7 +622,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             transport_pressure = 0
             loading_time = 3
             speed = 50
-            transport_time = 2 * (int(distance) / int(speed)) + 2 * (int(loading_time))
+            transport_time = 2 * (float(distance) / float(speed)) + 2 * (float(loading_time))
             capacity = 4300
             amount_tours_year = (production_profile['production'].sum()) / capacity  # Angaben in kg
             interval_tours_hours = (8760 / amount_tours_year) - transport_time  # alle x Stunden kommt eine Lieferung
@@ -638,7 +642,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 
 
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
-def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, infrastructure):
+def dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, infrastructure):
     power_cost_kwh = power_cost / 1000  # von €/MWh zu €/kWh
 
     if do_infrastructure == 'no':
@@ -779,13 +783,16 @@ def infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, po
 
     return infrastructure_dcf, npv
 
-def LCOI(runtime, wacc, plant_production, infrastructure_dcf):
 
+def LCOI(runtime, wacc, plant_production, infrastructure_dcf):
     # calculate the annuity factor for given runtime and wacc
-    annuity_factor = (((1+wacc)**runtime)-1) / (((1+wacc)**runtime)*wacc)
+    if wacc == 0:
+        wacc = 0.01
+    annuity_factor = (((1 + wacc) ** runtime) - 1) / (((1 + wacc) ** runtime) * wacc)
 
     # access only the cost columns of the dcf dataframe
     cost_df = infrastructure_dcf[0]
+    # cost_df.drop(cost_df.columns[[5, 6, 7]], axis=1, inplace=True)
 
     # calculate the investment cost and discoutned annual cost based on the reduces dcf dataframe
     total_investment = cost_df.loc[0].sum()
@@ -794,13 +801,13 @@ def LCOI(runtime, wacc, plant_production, infrastructure_dcf):
     total_discounted_cost = (total_investment + annual_cost) * -1
 
     # calculate the discounted production based on the plant productin profile
-    x_production = plant_production.production
-    discounted_production = sum(x_production) * annuity_factor
+    discounted_production = plant_production * annuity_factor
 
     # claculate the levelised cost
     Levelized_cost_infra = total_discounted_cost / discounted_production
 
     return Levelized_cost_infra
+
 
 def sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
                 variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
@@ -835,9 +842,8 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                                 regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease, temp,
                                 dcf_power_expenditure)
         output["VLS"].append(npv)
-    return output
     plt.figure(1)
-    for name, values in sens_ptx.items():
+    for name, values in output.items():
        plt.plot(values, label=name)
     plt.xticks(np.arange(0,21,2.5),['0%','25%','50%','75%','100%','125%','150%','175%','200%'])
     plt.ylabel('Net Present Value [€]')
@@ -845,9 +851,9 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
     plt.legend()
     plt.savefig("static/sensitivity_plot.png")
     plt.close()
+    return output
 
-
-def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, infrastructure):
+'''def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, infrastructure):
     output_1 = {"WACC": [], "Pipelinelänge": []}
     for x in range(20):
         factor = (x/10)
@@ -867,4 +873,40 @@ def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, pow
     plt.xlabel('Change')
     plt.legend()
     plt.savefig("static/sensitivity_infra_plot.png")
+    plt.close()'''
+
+
+def sensitivity_LCOI(runtime, wacc, plant_production, infrastructure_dcf):
+    output_1 = {"WACC": [], "Wasserstoffmenge": []}
+    for x in range(20):
+        factor = (x/10)
+        levelized_cost_infra = LCOI(runtime, wacc * factor, plant_production, infrastructure_dcf)
+        output_1["WACC"].append(levelized_cost_infra)
+        levelized_cost_infra = LCOI(runtime, wacc, plant_production * factor, infrastructure_dcf)
+        output_1["Wasserstoffmenge"].append(levelized_cost_infra)
+    plt.figure(2)
+    for name, values in output_1.items():
+        plt.plot(values)
+    plt.ylabel('LCOI')
+    plt.xlabel('Change')
+    plt.legend()
+    plt.savefig("static/sensitivity_lcoi_plot.png")
     plt.close()
+    return output_1
+
+
+def sens_LCOH2(runtime, wacc, plant_production, power_to_x_dcf):
+    output_1 = {"WACC": [], "Wasserstoffmenge": []}
+    for x in range(20):
+        factor = (x / 10)
+        Levelized_cost = LCOI(runtime, wacc, plant_production * factor, power_to_x_dcf)
+        output_1["Wasserstoffmenge"].append(Levelized_cost)
+    plt.figure(3)
+    for name, values in output_1.items():
+        plt.plot(values)
+    plt.ylabel('LCOH')
+    plt.xlabel('Change')
+    plt.legend()
+    plt.savefig("static/sensitivity_lcox_plot.png")
+    plt.close()
+    return output_1
