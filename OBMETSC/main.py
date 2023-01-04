@@ -83,7 +83,7 @@ def get():
     variable_cost = float(request.form['variable_cost'])  # Variable Costs (EUR/MWh) ptx
     efficiency_ele = float(request.form['efficiency_ele'])  # Electrical Overall-Efficiency of the system (in %)
     efficiency_th = float(request.form['efficiency_th'])  # ONLY xtp: Thermal Overall-Efficiency of the system (in %)
-    power_technology = float(request.form['power_technology'])  # installierte Leistung ptx-Anlage MWel
+    power_technology = float(request.form['power_technology'])  # installierte Leistung ptx-Anlage kWel
     capex_input = float(request.form['capex_input'])  # Investment Cost (EUR/kW)
     opex_input = float(request.form['opex_input'])  # Yearly Operational Cost (% of Investment Cost)
     power_cost = float(request.form['power_cost'])  # PtX Power Price / XtP Energy Carrier Sales Price (EUR/MWh)
@@ -91,7 +91,7 @@ def get():
     heat_cost = float(request.form['heat_cost'])  # Heat Sales Price
     margincost_model = str(request.form['margincost_model'])  # Cost-managed Operation (yes/no)
     input_technology = str(request.form['input_technology'])  # Power Input Technology
-    power_input = float(request.form['power_input'])  # Installed Capacity (MWel)
+    power_input = float(request.form['power_input'])  # Installed Capacity (kWel)
     share_input_wind = float(request.form['share_input_wind'])  # Share of Wind in combined case (in %)
     share_input_pv = float(request.form['share_input_pv'])  # Share of PV in combined case (in %):
     location = str(request.form['location'])  # Plant Location (Federal State)
@@ -128,7 +128,8 @@ def get():
     share_input_pv = float(share_input_pv / 100)
     min_storage_dimension_kg = min_storage_dimension_kwh / 33.3
     storage_time_hour = storage_time_days * 24
-
+    power_technology = float(power_technology / 1000)
+    power_input = float(power_input/1000)
 
     # the values are translated into the variables for the functions, efficiency is set as electrical efficiency
     capex_power_kw = capex_input  # €/kW
@@ -151,7 +152,8 @@ def get():
     capex_technology = capex_technology_kw * 1000
     opex_technology = opex_technology_kw * capex_technology_kw * 1000
 
-    # the value "renewables" is a True/False-variable that is important for frontend-html: If renewables true, the renewable energy production is shown as a figure
+    # the value "renewables" is a True/False-variable that is important for frontend-html: If renewables true,
+    # the renewable energy production is shown as a figure
     renewables = False
     dcf_power_expenditure = 1
     if ptx_technology == "Power-to-X":
@@ -179,13 +181,21 @@ def get():
         d = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
                            variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
                            EEG_expenditure, capex_decrease, opex_decrease, c, dcf_power_expenditure)
+        dcf_expenditure_technology = d[0]["expenditure_technology"]
+        dcf_expenditure_power_production = d[0]["expenditure_power_production"]
+        dcf_expenditure_power_grid = d[0]["expenditure_power_grid"]
+        dcf_expenditure_regulations = d[0]["expenditure_regulations"]
 
-        sens_ptx = sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                    variable_cost, product_price, wacc, price_change, regulations_grid_expenditure, EEG_expenditure,
-                    capex_decrease, opex_decrease, copy.deepcopy(c), dcf_power_expenditure)
+        sens_ptx = sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                               power_price_series, variable_cost, product_price, wacc, price_change,
+                               regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                               copy.deepcopy(c), dcf_power_expenditure)
 
-        LCOX = LCOH2(runtime, wacc, c, copy.deepcopy(d))
-        sens_lcox = sens_LCOH2(runtime, wacc, sum_ptx, copy.deepcopy(d))
+        LCOX = LCOH2(runtime, wacc, sum_ptx, dcf_expenditure_technology, dcf_expenditure_power_production,
+                     dcf_expenditure_power_grid, dcf_expenditure_regulations)
+        sens_lcox = sens_LCOH2(runtime, wacc, sum_ptx, dcf_expenditure_technology, dcf_expenditure_power_production,
+                               dcf_expenditure_power_grid, dcf_expenditure_regulations)
+
         # the output and DCF for a XtP Technology are calculated (for details: functions.py)
     elif ptx_technology == "X-to-Power":
         e = output_x_to_power(power_cost, power_price_series, power_technology, product_price, efficiency_el,
@@ -200,7 +210,6 @@ def get():
     x = pd.DataFrame({"default": list1, "default": list1})
     h = [x, "default"]
     infrastructure = False
-    # storage dimension and costs should be calculated
 
     # if infrastructure should be dimensioned, the functions g and h are executed
 
@@ -211,23 +220,30 @@ def get():
                                  share_input_wind, share_input_pv, min_storage_dimension_kg, storage_time_hour)
 
     h = dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, g)
-    # sens_infra = sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance,
-                                  # copy.deepcopy(g))
+    dcf_expenditure_transport = h[0]["expenditure_transport"]
+    dcf_expenditure_conversion = h[0]["expenditure_conversion"]
+    dcf_expenditure_storage = h[0]["expenditure_storage"]
 
-    LCOT = LCOI(runtime, wacc, sum_ptx, h)
-    sens_lcoi = sensitivity_LCOI(runtime, wacc, sum_ptx, copy.deepcopy(h))
+    LCOT = LCOI(runtime, wacc, sum_ptx, dcf_expenditure_transport, dcf_expenditure_conversion, dcf_expenditure_storage)
+
+    sens_lcoi = sensitivity_LCOI(runtime, wacc, sum_ptx, dcf_expenditure_transport, dcf_expenditure_conversion,
+                                 dcf_expenditure_storage)
+
     # a graphic is created from the power production profile
     if input_technology in list_pp and ptx_technology in list_ptx:
         plt.figure(0)
         plt.plot('time', 'pv_production', data=a, marker='', color='skyblue', linewidth=1)
         plt.plot('time', 'wind_production', data=a, marker='', color='olive', linewidth=1)
-        plt.legend()
+        # plt.legend()
+        plt.ylabel('EE-Produktion [MWh]')
+        plt.xlabel('Stunden')
         plt.savefig('static/power_production_plot.png')
         plt.close()
 
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, max_ptx=max_ptx,
                            column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
-                           Levelised_Cost=round(LCOX, 2), Levelized_cost_infra=round(LCOT, 2), o2_production=o2_production, sum_ptx_200=sum_ptx_200,
+                           Levelised_Cost=round(LCOX, 2), Levelized_cost_infra=round(LCOT, 2),
+                           o2_production=o2_production, sum_ptx_200=sum_ptx_200,
                            sum_power_production=sum_power_production, power_technology=power_technology,
                            sum_power=sum_power, renewables=renewables, ptx_technology=ptx_technology,
                            column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),

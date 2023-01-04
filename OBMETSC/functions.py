@@ -157,7 +157,7 @@ def dcf_power_production(input_technology, power_input, capex_power, opex_power,
 
     output_pp = output_power_production(input_technology, power_input, location, share_input_wind, share_input_pv)
 
-    if math.isclose(power_cost, 0.0):  # power_cost == 0: TODO: Funktion verstehe ich nicht. Die power cost werden doch indiv. eingegeben.
+    if math.isclose(power_cost, 0.0):
         power_cost1 = pd.DataFrame(get_price_series(power_price_series), columns=['price'])
         power_cost = power_cost1 * price_change
     else:
@@ -165,7 +165,7 @@ def dcf_power_production(input_technology, power_input, capex_power, opex_power,
         list2[0:8760] = [float(power_cost) for i in list2[0:8760]]
         power_cost = pd.DataFrame({"price": list2})
 
-    profit = (output_pp['pv_production'] + output_pp['wind_production']) * power_cost['price']  # hier auf die berechnete power production zugegriffen?
+    profit = (output_pp['pv_production'] + output_pp['wind_production']) * power_cost['price']
 
     list1 = list(range(0, runtime + 1))
 
@@ -247,7 +247,8 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
         if margincost_model == "yes":
             comparison_margincost1 = np.where(margincost['price'] < product_price, 1, 0)
             comparison_margincost2 = pd.DataFrame({'production': comparison_margincost1})
-            x_production3 = pd.DataFrame({'production': (comparison_margincost2['production'] * efficiency * power_technology)})
+            x_production3 = pd.DataFrame({'production': (comparison_margincost2['production'] * efficiency *
+                                                         power_technology)})
             grid_demand = x_production3['production'] / efficiency
             output_ptx = pd.DataFrame(
                 {"time": list1, "production": x_production3['production'], "renewable_demand": list2,
@@ -266,7 +267,8 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
         if margincost_model == "yes":
             comparison_margincost1 = np.where(margincost['price'] < product_price, 1, 0)
             comparison_margincost2 = pd.DataFrame({'production': comparison_margincost1})
-            x_production3 = pd.DataFrame({'production': (comparison_margincost2['production'] * efficiency * power_technology)})
+            x_production3 = pd.DataFrame({'production': (comparison_margincost2['production'] * efficiency *
+                                                         power_technology)})
             max_power_plant1 = np.where(output_pp <= power_technology, 1, 0)
             max_power_plant2 = np.where(output_pp <= power_technology, 0, power_technology)
             max_power_plant3 = pd.DataFrame({'production': max_power_plant1})
@@ -291,29 +293,27 @@ def output_power_to_x(power_technology, input_technology, efficiency, product_pr
             grid_demand1 = (x_production3['production'] / efficiency) - re_demand
             grid_demand = pd.DataFrame({'grid_demand': grid_demand1})
             output_ptx = XProductionData(time=list1, production=x_production3['production'], renewable_demand=re_demand,
-                                           grid_demand=grid_demand['grid_demand'], power_production=list2)
+                                         grid_demand=grid_demand['grid_demand'], power_production=list2)
 
     return output_ptx
 
 
-def LCOH2(runtime, wacc, plant_production, power_to_x_dcf):
+def LCOH2(runtime, wacc, plant_production, dcf_expenditure_technology, dcf_expenditure_power_production,
+                               dcf_expenditure_power_grid, dcf_expenditure_regulations):
 
     # calculate the annuity factor for given runtime and wacc
     annuity_factor = (((1+wacc)**runtime)-1) / (((1+wacc)**runtime)*wacc)
 
-    # access only the cost columns of the dcf dataframe
-    cost_df = power_to_x_dcf[0]
-    cost_df.drop(cost_df.columns[[5,6,7]], axis=1, inplace=True)
-
     # calculate the investment cost and discoutned annual cost based on the reduces dcf dataframe
-    total_investment = cost_df.loc[0].sum()
+    total_investment = dcf_expenditure_technology.loc[0] + dcf_expenditure_power_production.loc[0] + \
+                       dcf_expenditure_power_grid.loc[0] + dcf_expenditure_regulations.loc[0]
 
-    annual_cost = cost_df.loc[1].sum() * annuity_factor
+    annual_cost = (dcf_expenditure_technology.loc[1] + dcf_expenditure_power_production.loc[1] +
+                   dcf_expenditure_power_grid.loc[1] + dcf_expenditure_regulations.loc[1]) * annuity_factor
     total_discounted_cost = (total_investment + annual_cost) * -1
 
-    # calculate the discounted production based on the plant productin profile
-    x_production = plant_production.production
-    discounted_production = sum(x_production) * annuity_factor
+    # calculate the discounted production based on the plant productin profil
+    discounted_production = plant_production * annuity_factor
 
     # claculate the levelised cost
     Levelized_cost = total_discounted_cost / discounted_production
@@ -370,7 +370,7 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     list3 = list(range(0, runtime + 1))
 
     list4 = list3.copy()
-    list4 = [((-1) * opex_plant) for i in list4]
+    list4 = [(-1) * (opex_plant) for i in list4]
     list4[0] = (-1) * capex_plant
 
     list5 = list3.copy()
@@ -382,7 +382,7 @@ def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime,
     list6[0] = 0
 
     list7 = list3.copy()
-    list7 = [(-1) * (x_production_cost.sum()) for i in list7]
+    list7 = [-1 * (x_production_cost.sum()) for i in list7]
     list7[0] = 0
 
     power_to_x_dcf = pd.DataFrame(
@@ -431,15 +431,16 @@ def output_x_to_power(power_cost, power_price_series, power_technology,
         power_production1 = comparison_margincost['production'] * power_technology  # * efficiency_el
         heat_production1 = comparison_margincost['production'] * power_technology * efficiency_q
         input_product_demand = comparison_margincost['production'] * power_technology / efficiency_el
-        x_production = pd.DataFrame({"time": list1, "power_production": power_production1, "heat_production": heat_production1,
-                                     "input_product_demand": input_product_demand})
+        x_production = pd.DataFrame({"time": list1, "power_production": power_production1,
+                                     "heat_production": heat_production1, "input_product_demand": input_product_demand})
     elif margincost_model == "no":
         list2 = list1.copy()
         list2[0:8760] = [float(power_technology) for i in list2[0:8760]]
         input_product_demand = pd.DataFrame({"production": list2})
         power_production = input_product_demand['production'] * efficiency_el
         heat_production = input_product_demand['production'] * efficiency_q
-        x_production = pd.DataFrame({"time": list1, "power_production": power_production, "heat_production": heat_production,
+        x_production = pd.DataFrame({"time": list1, "power_production": power_production,
+                                     "heat_production": heat_production,
                                      "input_product_demand": input_product_demand['production']})
 
     return x_production
@@ -505,8 +506,10 @@ def dcf_x_to_power(power_technology, capex_technology, opex_technology, runtime,
     list7 = [power_revenue.sum() for i in list7]
     list7[0] = 0
 
-    xtp_dcf = pd.DataFrame({"year": list3, "expenditure": list4, "feedstock_cost": list5, "revenue_heat": list6, "revenue_power": list7})
-    xtp_dcf['profit'] = xtp_dcf['expenditure'] + xtp_dcf['feedstock_cost'] + xtp_dcf['revenue_heat'] + xtp_dcf['revenue_power']
+    xtp_dcf = pd.DataFrame({"year": list3, "expenditure": list4, "feedstock_cost": list5, "revenue_heat": list6,
+                            "revenue_power": list7})
+    xtp_dcf['profit'] = xtp_dcf['expenditure'] + xtp_dcf['feedstock_cost'] + xtp_dcf['revenue_heat'] + \
+                        xtp_dcf['revenue_power']
 
     x = 0
     npv_calc = list3
@@ -590,13 +593,13 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             loading_time = 1.5
             speed = 50
             transport_time = 2 * (float(distance) / float(speed)) + 2 * (float(loading_time))
-            if production_profile['production'].sum() < 36 * CAPACITY_TUBETRAILER_1:
+            if production_profile['production'].sum() < 112 * CAPACITY_TUBETRAILER_1:
                 capacity = CAPACITY_TUBETRAILER_1
                 transport_pressure = 200
-            elif production_profile['production'].sum() < 36 * CAPACITY_TUBETRAILER_2:
+            elif production_profile['production'].sum() < 112 * CAPACITY_TUBETRAILER_2:
                 capacity = CAPACITY_TUBETRAILER_1
                 transport_pressure = 350
-            elif production_profile['production'].sum() < 36 * CAPACITY_TUBETRAILER_3:
+            elif production_profile['production'].sum() < 112 * CAPACITY_TUBETRAILER_3:
                 capacity = CAPACITY_TUBETRAILER_3
                 transport_pressure = 550
             else:
@@ -637,8 +640,9 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
 
             energy_demand_year = ENERGY_DEMAND_LIQU * production_profile['production'].sum()
 
-    return InfrastructureData(amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length, throughput,
-            throughput_m3, throughput_kw, capacity, energy_demand_year, transport_time, amount_tours_year)
+    return InfrastructureData(amount_trailer, storage_dimension, onsite_storage, transport_pressure, pipe_length,
+                              throughput, throughput_m3, throughput_kw, capacity, energy_demand_year, transport_time,
+                              amount_tours_year)
 
 
 # Function calculates the costs (NPV and cash flows over runtime) for the designed infrastructure
@@ -784,20 +788,17 @@ def dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, po
     return infrastructure_dcf, npv
 
 
-def LCOI(runtime, wacc, plant_production, infrastructure_dcf):
+def LCOI(runtime, wacc, plant_production, dcf_expenditure_transport, dcf_expenditure_conversion, dcf_expenditure_storage):
     # calculate the annuity factor for given runtime and wacc
     if wacc == 0:
         wacc = 0.01
     annuity_factor = (((1 + wacc) ** runtime) - 1) / (((1 + wacc) ** runtime) * wacc)
 
-    # access only the cost columns of the dcf dataframe
-    cost_df = infrastructure_dcf[0]
-    # cost_df.drop(cost_df.columns[[5, 6, 7]], axis=1, inplace=True)
-
     # calculate the investment cost and discoutned annual cost based on the reduces dcf dataframe
-    total_investment = cost_df.loc[0].sum()
+    total_investment = dcf_expenditure_transport.loc[0] + dcf_expenditure_conversion.loc[0] + dcf_expenditure_storage.loc[0]
 
-    annual_cost = cost_df.loc[1].sum() * annuity_factor
+    annual_cost = (dcf_expenditure_transport.loc[1] + dcf_expenditure_conversion.loc[1] +
+                   dcf_expenditure_storage.loc[1]) * annuity_factor
     total_discounted_cost = (total_investment + annual_cost) * -1
 
     # calculate the discounted production based on the plant productin profile
@@ -812,7 +813,7 @@ def LCOI(runtime, wacc, plant_production, infrastructure_dcf):
 def sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
                 variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
                 EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure):
-    output = {"CapEx-PEM-Elektolyseur": [], "OpEx-PEM-Elektolyseur": [], "Stromkosten": [], "WACC": [], "VLS": []}
+    output = {"CapEx-PEM-Elektolyseur": [], "OpEx-PEM-Elektolyseur": [], "Strompreisänderung": []}
     for x in range(20):
         factor = (x/10)
         _, npv = dcf_power_to_x(power_technology, capex_technology * factor, opex_technology, runtime, power_cost,
@@ -826,86 +827,76 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                                 output_ptx, dcf_power_expenditure)
         output["OpEx-PEM-Elektolyseur"].append(npv)
         _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                output_ptx, dcf_power_expenditure * factor)
-        output["Stromkosten"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, wacc*factor, price_change,
+                                power_price_series, variable_cost, product_price, wacc, price_change*factor,
                                 regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
                                 output_ptx, dcf_power_expenditure)
-        output["WACC"].append(npv)
+        output["Strompreisänderung"].append(npv)
         temp = copy.deepcopy(output_ptx)
         temp.production = [x*factor for x in temp.production]
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease, temp,
-                                dcf_power_expenditure)
-        output["VLS"].append(npv)
     plt.figure(1)
     for name, values in output.items():
        plt.plot(values, label=name)
     plt.xticks(np.arange(0,21,2.5),['0%','25%','50%','75%','100%','125%','150%','175%','200%'])
-    plt.ylabel('Net Present Value [€]')
-    plt.xlabel('Change')
+    plt.ylabel('Kapitalwert [€]')
+    plt.xlabel('Parameteranpassung')
     plt.legend()
     plt.savefig("static/sensitivity_plot.png")
     plt.close()
     return output
 
-'''def sensitivity_infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, infrastructure):
-    output_1 = {"WACC": [], "Pipelinelänge": []}
+
+def sensitivity_LCOI(runtime, wacc, plant_production, dcf_expenditure_transport, dcf_expenditure_conversion, dcf_expenditure_storage):
+    output_1 = {"Transportkosten": [], "Umwandlungskosten": [], "Speicherkosten": []}
     for x in range(20):
         factor = (x/10)
-        _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc * factor, power_cost,
-                                    distance, infrastructure)
-        output_1["WACC"].append(npv)
-        temp = copy.deepcopy(infrastructure)
-        temp.pipe_length *= factor
-        _, npv = infrastructure_dcf(do_infrastructure, infrastructure_type, runtime, wacc, power_cost,  distance,
-                                    temp)
-        output_1["Pipelinelänge"].append(npv)
-    return output_1
-    plt.figure(2)
-    for name, values in sens_infra.items():
-        plt.plot(values, label=name)
-    plt.ylabel('Net Present Value [€]')
-    plt.xlabel('Change')
-    plt.legend()
-    plt.savefig("static/sensitivity_infra_plot.png")
-    plt.close()'''
-
-
-def sensitivity_LCOI(runtime, wacc, plant_production, infrastructure_dcf):
-    output_1 = {"WACC": [], "Wasserstoffmenge": []}
-    for x in range(20):
-        factor = (x/10)
-        levelized_cost_infra = LCOI(runtime, wacc * factor, plant_production, infrastructure_dcf)
-        output_1["WACC"].append(levelized_cost_infra)
-        levelized_cost_infra = LCOI(runtime, wacc, plant_production * factor, infrastructure_dcf)
-        output_1["Wasserstoffmenge"].append(levelized_cost_infra)
+        levelized_cost_infra = LCOI(runtime, wacc, plant_production, dcf_expenditure_transport*factor,
+                                    dcf_expenditure_conversion, dcf_expenditure_storage)
+        output_1["Transportkosten"].append(levelized_cost_infra)
+        levelized_cost_infra = LCOI(runtime, wacc, plant_production, dcf_expenditure_transport,
+                                    dcf_expenditure_conversion*factor, dcf_expenditure_storage)
+        output_1["Umwandlungskosten"].append(levelized_cost_infra)
+        levelized_cost_infra = LCOI(runtime, wacc, plant_production, dcf_expenditure_transport,
+                                    dcf_expenditure_conversion, dcf_expenditure_storage*factor)
+        output_1["Speicherkosten"].append(levelized_cost_infra)
     plt.figure(2)
     for name, values in output_1.items():
-        plt.plot(values)
-    plt.ylabel('LCOI')
-    plt.xlabel('Change')
+        plt.plot(values, label=name)
+    plt.ylabel('Infrastrukturkosten [€/MWh]')
+    plt.xlabel('Parameteranpassung')
     plt.legend()
     plt.savefig("static/sensitivity_lcoi_plot.png")
     plt.close()
     return output_1
 
 
-def sens_LCOH2(runtime, wacc, plant_production, power_to_x_dcf):
-    output_1 = {"WACC": [], "Wasserstoffmenge": []}
+def sens_LCOH2(runtime, wacc, plant_production, dcf_expenditure_technology, dcf_expenditure_power_production,
+               dcf_expenditure_power_grid, dcf_expenditure_regulations):
+    output_1 = {"Strombezugskosten - Netz": [], "Ausgaben-Regularien": [], "Elektrolysekosten": [],
+                "Stromproduktionskosten - EE": []}
     for x in range(20):
         factor = (x / 10)
-        Levelized_cost = LCOI(runtime, wacc, plant_production * factor, power_to_x_dcf)
-        output_1["Wasserstoffmenge"].append(Levelized_cost)
+        levelized_cost = LCOH2(runtime, wacc, plant_production, dcf_expenditure_technology,
+                               dcf_expenditure_power_production,
+                               dcf_expenditure_power_grid * factor, dcf_expenditure_regulations)
+        output_1["Strombezugskosten - Netz"].append(levelized_cost)
+        levelized_cost = LCOH2(runtime, wacc, plant_production, dcf_expenditure_technology,
+                               dcf_expenditure_power_production,
+                               dcf_expenditure_power_grid, dcf_expenditure_regulations * factor)
+        output_1["Ausgaben-Regularien"].append(levelized_cost)
+        levelized_cost = LCOH2(runtime, wacc, plant_production, dcf_expenditure_technology * factor,
+                               dcf_expenditure_power_production,
+                               dcf_expenditure_power_grid, dcf_expenditure_regulations)
+        output_1["Elektrolysekosten"].append(levelized_cost)
+        levelized_cost = LCOH2(runtime, wacc, plant_production, dcf_expenditure_technology,
+                               dcf_expenditure_power_production* factor,
+                               dcf_expenditure_power_grid, dcf_expenditure_regulations)
+        output_1["Stromproduktionskosten - EE"].append(levelized_cost)
     plt.figure(3)
     for name, values in output_1.items():
-        plt.plot(values)
-    plt.ylabel('LCOH')
-    plt.xlabel('Change')
+        plt.plot(values, label=name)
+    plt.xticks(np.arange(0, 21, 2.5), ['0%', '25%', '50%', '75%', '100%', '125%', '150%', '175%', '200%'])
+    plt.ylabel('Wasserstoffgestehungskosten [€/MWh]')
+    plt.xlabel('Kostenanpassung')
     plt.legend()
     plt.savefig("static/sensitivity_lcox_plot.png")
     plt.close()
