@@ -217,8 +217,8 @@ def get():
     g = infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_type, distance, power_technology,
                                  input_technology, efficiency, product_price, margincost_model, variable_cost, location,
                                  power_input, power_cost, power_price_series, efficiency_el, efficiency_q, price_change,
-                                 share_input_wind, share_input_pv, min_storage_dimension_kg, storage_time_hour)
-
+                                 share_input_wind, share_input_pv, min_storage_dimension_kg)
+    storage_dimension_m3 = g.storage_dimension / 14
     h = dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, g)
     dcf_expenditure_transport = h[0]["expenditure_transport"]
     dcf_expenditure_conversion = h[0]["expenditure_conversion"]
@@ -245,10 +245,9 @@ def get():
                            Levelised_Cost=round(LCOX, 2), Levelized_cost_infra=round(LCOT, 2),
                            o2_production=o2_production, sum_ptx_200=sum_ptx_200,
                            sum_power_production=sum_power_production, power_technology=power_technology,
-                           sum_power=sum_power, renewables=renewables, ptx_technology=ptx_technology,
+                           sum_power=sum_power, storage_dimension=round(storage_dimension_m3, 2), renewables=renewables, ptx_technology=ptx_technology,
                            column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),
                            infrastructure=infrastructure, npv_infrastructure=h[1], zip=zip)
-
 
 if __name__ == "__main__":
     app.run(debug=True)
