@@ -218,7 +218,7 @@ def get():
                                  input_technology, efficiency, product_price, margincost_model, variable_cost, location,
                                  power_input, power_cost, power_price_series, efficiency_el, efficiency_q, price_change,
                                  share_input_wind, share_input_pv, min_storage_dimension_kg)
-    storage_dimension_m3 = g.storage_dimension / 14
+    storage_dimension_m3 = g.storage_dimension_m3
     h = dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, g)
     dcf_expenditure_transport = h[0]["expenditure_transport"]
     dcf_expenditure_conversion = h[0]["expenditure_conversion"]

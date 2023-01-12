@@ -90,6 +90,7 @@ ENERGY_DEMAND_PUMP = 0
 @dataclass
 class InfrastructureData:
     storage_dimension: float
+    storage_dimension_m3: float
     onsite_storage: float
     transport_pressure: int
     pipe_length: float
@@ -575,6 +576,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
     else:
         if infrastructure_type == "Pipeline":
             storage_dimension = 0
+            storage_dimension_m3 = 0
             onsite_storage = 0
             pipe_length = float(distance)
             transport_pressure = 0
@@ -591,10 +593,10 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             if production_profile['production'].sum() < 52 * CAPACITY_TUBETRAILER_1:
                 capacity = CAPACITY_TUBETRAILER_1
                 transport_pressure = 200
-            elif production_profile['production'].sum() < 52 * CAPACITY_TUBETRAILER_2:
+            elif production_profile['production'].sum() < 53 * CAPACITY_TUBETRAILER_2:
                 capacity = CAPACITY_TUBETRAILER_1
                 transport_pressure = 350
-            elif production_profile['production'].sum() < 52 * CAPACITY_TUBETRAILER_3:
+            elif production_profile['production'].sum() < 53 * CAPACITY_TUBETRAILER_3:
                 capacity = CAPACITY_TUBETRAILER_3
                 transport_pressure = 550
             else:
@@ -610,7 +612,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             onsite_storage_m3 = onsite_storage / 0.09
 
             storage_dimension = capacity + min_storage_dimension_kg
-            storage_dimension_m3 = storage_dimension / 0.09
+            storage_dimension_m3 = storage_dimension / 14
 
             energy_demand_year = ENERGY_DEMAND_COMPRESSOR * production_profile['production'].sum()
 
@@ -627,14 +629,13 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             # Zwischenspeicher am Produktionsort muss die maximale H2-Produktion über das kalkulierte
             # Belieferungsintervall speichern könne
             onsite_storage = interval_tours_days * (throughput * 24)
-            onsite_storage_m3 = onsite_storage / 0.09
-
+            onsite_storage_m3 = onsite_storage
             storage_dimension = capacity + min_storage_dimension_kg
-            storage_dimension_m3 = storage_dimension / 0.09
+            storage_dimension_m3 = storage_dimension / 70.99
 
             energy_demand_year = ENERGY_DEMAND_LIQU * production_profile['production'].sum()
 
-    return InfrastructureData(storage_dimension, onsite_storage, transport_pressure, pipe_length,
+    return InfrastructureData(storage_dimension, storage_dimension_m3, onsite_storage, transport_pressure, pipe_length,
                               throughput, throughput_m3, throughput_kw, capacity, energy_demand_year, transport_time,
                               amount_tours_year)
 
