@@ -223,11 +223,14 @@ def get():
     dcf_expenditure_transport = h[0]["expenditure_transport"]
     dcf_expenditure_conversion = h[0]["expenditure_conversion"]
     dcf_expenditure_storage = h[0]["expenditure_storage"]
+    dcf_expenditure_energy_demand = h[0]["expenditure_energy_demand"]
+    sens_infra = sensitivity_Infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, g)
 
-    LCOT = LCOI(runtime, wacc, sum_ptx, dcf_expenditure_transport, dcf_expenditure_conversion, dcf_expenditure_storage)
+    LCOT = LCOI(runtime, wacc, sum_ptx, dcf_expenditure_transport, dcf_expenditure_conversion, dcf_expenditure_storage,
+                dcf_expenditure_energy_demand)
 
     sens_lcoi = sensitivity_LCOI(runtime, wacc, sum_ptx, dcf_expenditure_transport, dcf_expenditure_conversion,
-                                 dcf_expenditure_storage)
+                                 dcf_expenditure_storage, dcf_expenditure_energy_demand)
 
     # a graphic is created from the power production profile
     if input_technology in list_pp and ptx_technology in list_ptx:

@@ -83,9 +83,8 @@ AMORTIZATION_PIPE = 40
 AMORTIZATION_GDRMA = 45
 
 ENERGY_DEMAND_COMPRESSOR = 1  # kWh el pro kg H2
-ENERGY_DEMAND_LIQU = 7
-ENERGY_DEMAND_EVA = 0
-ENERGY_DEMAND_PUMP = 0
+ENERGY_DEMAND_LH2 = 7.7
+
 
 @dataclass
 class InfrastructureData:
@@ -560,8 +559,10 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
     if do_infrastructure == 'no':
         if min_storage_dimension_kg > 0:
             storage_dimension = min_storage_dimension_kg
+            storage_dimension_m3 = storage_dimension / 14
         else:
             storage_dimension = 0
+            storage_dimension_m3 = 0
         onsite_storage = 0
         transport_pressure = 0
         pipe_length = 0
@@ -572,6 +573,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             energy_demand_year = 0
         transport_time = 0
         amount_tours_year = 0
+
 
     else:
         if infrastructure_type == "Pipeline":
@@ -590,13 +592,13 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             loading_time = 1.5
             speed = 50
             transport_time = 2 * (float(distance) / float(speed)) + 2 * (float(loading_time))
-            if production_profile['production'].sum() < 52 * CAPACITY_TUBETRAILER_1:
+            if production_profile['production'].sum() < 110 * CAPACITY_TUBETRAILER_1:
                 capacity = CAPACITY_TUBETRAILER_1
                 transport_pressure = 200
-            elif production_profile['production'].sum() < 53 * CAPACITY_TUBETRAILER_2:
+            elif production_profile['production'].sum() < 110 * CAPACITY_TUBETRAILER_2:
                 capacity = CAPACITY_TUBETRAILER_1
                 transport_pressure = 350
-            elif production_profile['production'].sum() < 53 * CAPACITY_TUBETRAILER_3:
+            elif production_profile['production'].sum() < 110 * CAPACITY_TUBETRAILER_3:
                 capacity = CAPACITY_TUBETRAILER_3
                 transport_pressure = 550
             else:
@@ -633,7 +635,7 @@ def infrastructure_dimension(ptx_technology, do_infrastructure, infrastructure_t
             storage_dimension = capacity + min_storage_dimension_kg
             storage_dimension_m3 = storage_dimension / 70.99
 
-            energy_demand_year = ENERGY_DEMAND_LIQU * production_profile['production'].sum()
+            energy_demand_year = ENERGY_DEMAND_LH2 * production_profile1.sum()
 
     return InfrastructureData(storage_dimension, storage_dimension_m3, onsite_storage, transport_pressure, pipe_length,
                               throughput, throughput_m3, throughput_kw, capacity, energy_demand_year, transport_time,
@@ -669,19 +671,19 @@ def dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, po
     else:
         if infrastructure_type == "Pipeline":
             if infrastructure.throughput_m3 < GAS_FLOW_HOUR_1:
-                capex_pipe = CAPEX_PIPE_1 * infrastructure.pipe_length
+                capex_pipe = CAPEX_PIPE_1 * distance
             elif infrastructure.throughput_m3 < GAS_FLOW_HOUR_2:
-                capex_pipe = CAPEX_PIPE_2 * infrastructure.pipe_length
+                capex_pipe = CAPEX_PIPE_2 * distance
             elif infrastructure.throughput_m3 < GAS_FLOW_HOUR_3:
-                capex_pipe = CAPEX_PIPE_3 * infrastructure.pipe_length
+                capex_pipe = CAPEX_PIPE_3 * distance
             elif infrastructure.throughput_m3 < GAS_FLOW_HOUR_4:
-                capex_pipe = CAPEX_PIPE_4 * infrastructure.pipe_length
+                capex_pipe = CAPEX_PIPE_4 * distance
             else:
                 print("MAX PIPELINE TO SMALL -> USING MAX PIPELINE")
-                capex_pipe = CAPEX_PIPE_4 * infrastructure.pipe_length  # TODO: Was, wenn max. Pipeline zu klein
+                capex_pipe = CAPEX_PIPE_4 * distance  # TODO: Was, wenn max. Pipeline zu klein
             opex_pipe = OPEX_PIPE_RATE * capex_pipe
             # Druckreduktion in Pipeline für Endanwendung durch GDRMA alle 35 km. (Mind. 2)
-            gdrma_amount = max(math.ceil(infrastructure.pipe_length / 35), 2)
+            gdrma_amount = max(math.ceil(distance / 35), 2)
             if infrastructure.throughput_m3 > 400:
                 capex_gdrma = gdrma_amount * GDRMA
             else:
@@ -701,6 +703,7 @@ def dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, po
             capex_conversion = capex_gdrma
             driver_cost = 0
             fuel_cost = 0
+            cost_energy_demand_year = 0
 
         if infrastructure_type == "Tubetrailer":
             # onsite_storage_m3 = infrastructure.onsite_storage / 14
@@ -713,15 +716,15 @@ def dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, po
             cost_energy_demand_year = infrastructure.energy_demand_year * power_cost_kwh
             if infrastructure.transport_pressure == 200:
                 capex_compressor = CAPEX_COMPRESSOR_1
-                opex_compressor = OPEX_COMPRESSOR_1 + cost_energy_demand_year
+                opex_compressor = OPEX_COMPRESSOR_1
                 capex_trailer = CAPEX_TRAILER_200bar
             elif infrastructure.transport_pressure == 350:
                 capex_compressor = 2 * CAPEX_COMPRESSOR_1
-                opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2 + cost_energy_demand_year
+                opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2
                 capex_trailer = CAPEX_TRAILER_350bar
             elif infrastructure.transport_pressure == 550:
                 capex_compressor = CAPEX_COMPRESSOR_1 + CAPEX_COMPRESSOR_2
-                opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2 + cost_energy_demand_year
+                opex_compressor = OPEX_COMPRESSOR_1 + OPEX_COMPRESSOR_2
                 capex_trailer = CAPEX_TRAILER_550bar
             opex_trailer = OPEX_TRAILER_RATE * capex_trailer
             opex_transport = opex_trailer + OPEX_TRUCK
@@ -743,8 +746,8 @@ def dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, po
             opex_transport = opex_trailer + OPEX_TRUCK
             capex_transport = capex_trailer + CAPEX_TRUCK
             cost_energy_demand_year = infrastructure.energy_demand_year * power_cost_kwh
-            capex_liqu = 105000000 * max((((infrastructure.throughput * 24)/50)**0.66), 1)
-            opex_liqu = OPEX_LIQU_RATE * capex_liqu + cost_energy_demand_year
+            capex_liqu = 105000000 * ((((infrastructure.throughput/1000) * 24)/50)**0.66)
+            opex_liqu = OPEX_LIQU_RATE * capex_liqu
             capex_evaporator = CAPEX_EVA_EURO_PRO_KG * (infrastructure.throughput * 24)
             opex_evaporator = OPEX_EVA_RATE * capex_evaporator
             capex_lh2_pump = CAPEX_PUMP_EURO_PRO_KG * (infrastructure.throughput * 24)
@@ -755,22 +758,31 @@ def dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, po
             fuel_cost = ((distance/100) * 34.5 * 2) * infrastructure.amount_tours_year
 
     list3 = list(range(0, runtime + 1))
-    list4 = [((-1) * (opex_transport + driver_cost + fuel_cost)) for i in range(len(list3))]
+    list4 = [((-1) * opex_transport) for i in range(len(list3))]
     list4[0] = (-1) * capex_transport
+
+    list5 = [((-1) * (driver_cost + fuel_cost)) for i in range(len(list3))]
+    list5[0] = 0
+
+    list7 = [((-1) * cost_energy_demand_year) for i in range(len(list3))]
+    list7[0] = 0
     # hier soll rein, dass nach X Jahren Komponenten ausgetauscht werden müssen und entsprechend die CaPex nach X Jahren
     # erneut anfallen
     # Jährliche Energiekosten solln in einer Spalte angezeigt werden oder zu den Kosten in Liste 5 addiert werden
 
-    list5 = [((-1) * (opex_compressor + opex_liqu + opex_evaporator + opex_lh2_pump)) for _ in range(len(list3))]
-    list5[0] = (-1) * capex_conversion
+    list6 = [((-1) * (opex_compressor + opex_liqu + opex_evaporator + opex_lh2_pump)) for _ in range(len(list3))]
+    list6[0] = (-1) * capex_conversion
 
-    list6 = [((-1) * opex_storage) for _ in range(len(list3))]
-    list6[0] = (-1) * capex_storage
+    list8 = [((-1) * opex_storage) for _ in range(len(list3))]
+    list8[0] = (-1) * capex_storage
 
-    infrastructure_dcf = pd.DataFrame({"year": list3, "expenditure_transport": list4,
-                                       "expenditure_conversion": list5, "expenditure_storage": list6})
+    infrastructure_dcf = pd.DataFrame({"year": list3, "expenditure_transport": list4, "expenditure_driver_and_fuel": list5,
+                                       "expenditure_conversion": list6, "expenditure_energy_demand": list7,
+                                       "expenditure_storage": list8})
     infrastructure_dcf['expenditure_total'] = infrastructure_dcf["expenditure_transport"] \
+                                              + infrastructure_dcf["expenditure_driver_and_fuel"]\
                                               + infrastructure_dcf["expenditure_conversion"] \
+                                              + infrastructure_dcf["expenditure_energy_demand"] \
                                               + infrastructure_dcf["expenditure_storage"]
     x = 0
     npv_calc = list3
@@ -783,17 +795,19 @@ def dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, po
     return infrastructure_dcf, npv
 
 
-def LCOI(runtime, wacc, plant_production, dcf_expenditure_transport, dcf_expenditure_conversion, dcf_expenditure_storage):
+def LCOI(runtime, wacc, plant_production, dcf_expenditure_transport, dcf_expenditure_conversion,
+         dcf_expenditure_storage, dcf_expenditure_energy_demand):
     # calculate the annuity factor for given runtime and wacc
     if wacc == 0:
         wacc = 0.01
     annuity_factor = (((1 + wacc) ** runtime) - 1) / (((1 + wacc) ** runtime) * wacc)
 
     # calculate the investment cost and discoutned annual cost based on the reduces dcf dataframe
-    total_investment = dcf_expenditure_transport.loc[0] + dcf_expenditure_conversion.loc[0] + dcf_expenditure_storage.loc[0]
+    total_investment = dcf_expenditure_transport.loc[0] + dcf_expenditure_conversion.loc[0] \
+                       + dcf_expenditure_storage.loc[0] + dcf_expenditure_energy_demand.loc[0]
 
     annual_cost = (dcf_expenditure_transport.loc[1] + dcf_expenditure_conversion.loc[1] +
-                   dcf_expenditure_storage.loc[1]) * annuity_factor
+                   dcf_expenditure_storage.loc[1] + dcf_expenditure_energy_demand.loc[1]) * annuity_factor
     total_discounted_cost = (total_investment + annual_cost) * -1
 
     # calculate the discounted production based on the plant productin profile
@@ -808,9 +822,9 @@ def LCOI(runtime, wacc, plant_production, dcf_expenditure_transport, dcf_expendi
 def sensitivity(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
                 variable_cost, product_price, wacc, price_change, regulations_grid_expenditure,
                 EEG_expenditure, capex_decrease, opex_decrease, output_ptx, dcf_power_expenditure):
-    output = {"CapEx (PtX)": [], "Installierte Leistung (PtX)": [], "Strombezugspreis": [], "Variable Kosten": [],
-              "Preis für PtX-Energieträger": [], "Zinssatz": [], "OpEx (PtX)": [], "Netzentgelte": [],
-              "Jährliche Stromproduktionskosten": [], "Strompreisänderung": [], "Produktionsmenge": []}
+    output = {"CapEx (PtX)": [], "OpEx (PtX)": [], "Variable Kosten": [],
+              "Zinssatz": [], "Strombezugskosten": [],
+              "Abgaben/Umlagen/Steuern": []}
     for x in range(20):
         factor = (x/10)
         _, npv = dcf_power_to_x(power_technology, capex_technology * factor, opex_technology, runtime, power_cost,
@@ -818,58 +832,31 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
                                 regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
                                 output_ptx, dcf_power_expenditure)
         output["CapEx (PtX)"].append(npv)
-        _, npv = dcf_power_to_x(power_technology * factor, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                output_ptx, dcf_power_expenditure)
-        output["Installierte Leistung (PtX)"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost * factor,
-                                power_price_series, variable_cost, product_price, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                output_ptx, dcf_power_expenditure)
-        output["Strombezugspreis"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost * factor, product_price, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                output_ptx, dcf_power_expenditure)
-        output["Variable Kosten"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price * factor, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                output_ptx, dcf_power_expenditure)
-        output["Preis für PtX-Energieträger"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, wacc * factor, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                output_ptx, dcf_power_expenditure)
-        output["Zinssatz"].append(npv)
         _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology * factor, runtime, power_cost,
                                 power_price_series, variable_cost, product_price, wacc, price_change,
                                 regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
                                 output_ptx, dcf_power_expenditure)
         output["OpEx (PtX)"].append(npv)
         _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost * factor, product_price, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                output_ptx, dcf_power_expenditure)
+        output["Variable Kosten"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
+                                power_price_series, variable_cost, product_price, wacc * factor, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                output_ptx, dcf_power_expenditure)
+        output["Zinssatz"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost * factor,
+                                power_price_series, variable_cost, product_price, wacc, price_change,
+                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
+                                output_ptx, dcf_power_expenditure)
+        output["Strombezugskosten"].append(npv)
+        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
                                 power_price_series, variable_cost, product_price, wacc, price_change,
                                 regulations_grid_expenditure * factor, EEG_expenditure, capex_decrease, opex_decrease,
                                 output_ptx, dcf_power_expenditure)
-        output["Netzentgelte"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                output_ptx, dcf_power_expenditure * factor)
-        output["Jährliche Stromproduktionskosten"].append(npv)
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, wacc, price_change*factor,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                output_ptx, dcf_power_expenditure)
-        output["Strompreisänderung"].append(npv)
-        temp = copy.deepcopy(output_ptx)
-        temp.production = [x*factor for x in temp.production]
-        _, npv = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                power_price_series, variable_cost, product_price, wacc, price_change,
-                                regulations_grid_expenditure, EEG_expenditure, capex_decrease, opex_decrease,
-                                temp, dcf_power_expenditure)
-        output["Produktionsmenge"].append(npv)
+        output["Abgaben/Umlagen/Steuern"].append(npv)
     plt.figure(figsize=(12, 10), dpi=80)
     for name, values in output.items():
        plt.plot(values, label=name)
@@ -881,32 +868,41 @@ def sensitivity(power_technology, capex_technology, opex_technology, runtime, po
     ax = plt.subplot(111)
     box = ax.get_position()
     ax.set_position([box.x0, box.y0 + box.height * 0.2, box.width, box.height * 0.9])
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.07), ncol=3)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.14), ncol=2)
     plt.savefig("static/sensitivity_plot.png")
     plt.close()
     return output
 
 
-def sensitivity_LCOI(runtime, wacc, plant_production, dcf_expenditure_transport, dcf_expenditure_conversion, dcf_expenditure_storage):
-    output_1 = {"Transportkosten": [], "Umwandlungskosten": [], "Speicherkosten": []}
+def sensitivity_LCOI(runtime, wacc, plant_production, dcf_expenditure_transport, dcf_expenditure_conversion,
+                     dcf_expenditure_storage, dcf_expenditure_energy_demand):
+    output_1 = {"Transportkosten": [], "Umwandlungskosten": [], "Speicherkosten": [], "Energiekosten": []}
     for x in range(20):
         factor = (x/10)
         levelized_cost_infra = LCOI(runtime, wacc, plant_production, dcf_expenditure_transport*factor,
-                                    dcf_expenditure_conversion, dcf_expenditure_storage)
+                                    dcf_expenditure_conversion, dcf_expenditure_storage, dcf_expenditure_energy_demand)
         output_1["Transportkosten"].append(levelized_cost_infra)
         levelized_cost_infra = LCOI(runtime, wacc, plant_production, dcf_expenditure_transport,
-                                    dcf_expenditure_conversion*factor, dcf_expenditure_storage)
+                                    dcf_expenditure_conversion*factor, dcf_expenditure_storage, dcf_expenditure_energy_demand)
         output_1["Umwandlungskosten"].append(levelized_cost_infra)
         levelized_cost_infra = LCOI(runtime, wacc, plant_production, dcf_expenditure_transport,
-                                    dcf_expenditure_conversion, dcf_expenditure_storage*factor)
+                                    dcf_expenditure_conversion, dcf_expenditure_storage*factor, dcf_expenditure_energy_demand)
         output_1["Speicherkosten"].append(levelized_cost_infra)
+        levelized_cost_infra = LCOI(runtime, wacc, plant_production, dcf_expenditure_transport,
+                                    dcf_expenditure_conversion, dcf_expenditure_storage, dcf_expenditure_energy_demand*factor)
+        output_1["Energiekosten"].append(levelized_cost_infra)
     plt.figure(2)
     for name, values in output_1.items():
         plt.plot(values, label=name)
-    plt.xticks(np.arange(0, 21, 2.5), ['0%', '25%', '50%', '75%', '100%', '125%', '150%', '175%', '200%'])
-    plt.ylabel('Infrastrukturkosten [€/MWh]')
-    plt.xlabel('Parameteranpassung')
-    plt.legend()
+    plt.yticks(fontsize=10)
+    plt.xticks(np.arange(0, 21, 2.5), ['0', '25', '50', '75', '100', '125', '150', '175', '200'], fontsize=10)
+    plt.ylabel('Infrastrukturkosten [€/MWh]',fontsize=12)
+    plt.xlabel('Kostenanpassung [%]', fontsize=12)
+    plt.rcParams.update({'font.size': 12})
+    ax = plt.subplot(111)
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 + box.height * 0.2, box.width, box.height * 0.9])
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.14), ncol=2)
     plt.savefig("static/sensitivity_lcoi_plot.png")
     plt.close()
     return output_1
@@ -937,11 +933,45 @@ def sens_LCOH2(runtime, wacc, plant_production, dcf_expenditure_technology, dcf_
     plt.figure(3)
     for name, values in output_1.items():
         plt.plot(values, label=name)
-    plt.xticks(np.arange(0, 21, 2.5), ['0%', '25%', '50%', '75%', '100%', '125%', '150%', '175%', '200%'])
-    plt.ylabel('Wasserstoffgestehungskosten [€/MWh]')
-    plt.xlabel('Kostenanpassung')
-    plt.legend()
+    plt.yticks(fontsize=10)
+    plt.xticks(np.arange(0, 21, 2.5), ['0', '25', '50', '75', '100', '125', '150', '175', '200'], fontsize=10)
+    plt.ylabel('Wasserstoffgestehungskosten [€/MWh]', fontsize=12)
+    plt.xlabel('Kostenanpassung [%]', fontsize=12)
+    plt.rcParams.update({'font.size': 12})
+    ax = plt.subplot(111)
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 + box.height * 0.2, box.width, box.height * 0.9])
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.14), ncol=2)
     plt.savefig("static/sensitivity_lcox_plot.png")
     plt.close()
     return output_1
 
+
+def sensitivity_Infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, infrastructure):
+    output_3 = {"Transportdistanz": [], "WACC": [], "Stromkosten": []}
+    for x in range(20):
+        factor = (x / 10)
+        _, npv = dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance*factor,
+                                    infrastructure)
+        output_3["Transportdistanz"].append(npv)
+        _, npv = dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc*factor, power_cost, distance,
+                                    infrastructure)
+        output_3["WACC"].append(npv)
+        _, npv = dcf_infrastructure(do_infrastructure, infrastructure_type, runtime, wacc, power_cost*factor, distance,
+                                infrastructure)
+        output_3["Stromkosten"].append(npv)
+    plt.figure(3)
+    for name, values in output_3.items():
+        plt.plot(values, label=name)
+    plt.xticks(np.arange(0, 21, 2.5), ['0%', '25%', '50%', '75%', '100%', '125%', '150%', '175%', '200%'], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylabel('Kapitalwert [€]', fontsize=15)
+    plt.xlabel('Parameteranpassung', fontsize=15)
+    plt.rcParams.update({'font.size': 15})
+    ax = plt.subplot(111)
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 + box.height * 0.2, box.width, box.height * 0.9])
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.14), ncol=2)
+    plt.savefig("static/sensitivity_infra_plot.png")
+    plt.close()
+    return output_3
