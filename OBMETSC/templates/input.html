@@ -30,9 +30,9 @@ SPDX-License-Identifier: MIT
     </div>
 
    <div class="col-md-4">
-      <label for="power_technology" class="form-label">Installed Capacity (MWel):</label>
+      <label for="power_technology" class="form-label">Installed Capacity (kWel):</label>
       <input type="number" step="0.01" class="form-control" name = "power_technology" min="0"
-             value="1" id="power_technology" required>
+             placeholder="e.g. 1000" id="power_technology" required>
    <p style="padding-bottom: 30px; width: 900px;">
    </div>
 
@@ -44,19 +44,19 @@ SPDX-License-Identifier: MIT
 
     <div class="col-md-4">
       <label for="capex_technology" class="form-label">Investment Cost (EUR/kW):</label>
-      <input type="number" step="0.01" class="form-control" name = "capex_technology" min="0" value="978"
-             placeholder="e.g. 1600" id="capex_technology" required>
+      <input type="number" step="0.01" class="form-control" name = "capex_technology" min="0"
+             placeholder="e.g. 1000" id="capex_technology" required>
     </div>
 
     <div class="col-md-4">
       <label for="opex_technology" class="form-label">Yearly Operational Cost (% of Investment Cost):</label>
-      <input type="number" step="0.01" class="form-control" name = "opex_technology" min="0" value="7"
+      <input type="number" step="0.01" class="form-control" name = "opex_technology" min="0"
              placeholder="e.g. 4" id="opex_technology" required>
     </div>
 
     <div class="col-md-4">
       <label for="variable_cost" class="form-label">Variable Costs (EUR/MWh):</label>
-      <input type="number" step="0.01" class="form-control" name = "variable_cost" min="0", value="10"
+      <input type="number" step="0.01" class="form-control" name = "variable_cost" min="0",
              placeholder="e.g. 10" id="variable_cost" required>
     <p style="padding-bottom: 30px; width: 900px;">
     </div>
@@ -66,13 +66,13 @@ SPDX-License-Identifier: MIT
 
     <div class="col-md-5">
       <label for="efficiency_ele" class="form-label">Electrical Overall-Efficiency of the system (in %):</label>
-      <input type="number" step="0.01" class="form-control" name = "efficiency_ele" min="0" value="70"
+      <input type="number" step="0.01" class="form-control" name = "efficiency_ele" min="0"
              placeholder="e.g. 70" id="efficiency_ele" required>
     </div>
 
     <div class="col-md-5">
       <label for="efficiency_th" class="form-label">Thermal Overall-Efficiency of the system (in %):</label>
-      <input type="number" step="0.01" class="form-control" name = "efficiency_th" min="0" value="0"
+      <input type="number" step="0.01" class="form-control" name = "efficiency_th" min="0"
              placeholder="e.g. 0" id="efficiency_th" required>
         <p style="padding-bottom: 30px; width: 900px;">
     </div>
@@ -94,9 +94,9 @@ SPDX-License-Identifier: MIT
     </div>
 
     <div class="col-md-5">
-      <label for="power_input" class="form-label">Installed Capacity (MWel):</label>
-      <input type="number" step="0.01" class="form-control" name = "power_input" min="0" value="1"
-             placeholder="e.g. 20" id="power_input" required>
+      <label for="power_input" class="form-label">Installed Capacity (kWel):</label>
+      <input type="number" step="0.01" class="form-control" name = "power_input" min="0"
+             placeholder="e.g. 2000" id="power_input" required>
     </div>
 
    <label class="form-label">In case of a combination of Wind and PV you to define the system.
@@ -122,13 +122,13 @@ SPDX-License-Identifier: MIT
     <div class="col-md-4">
       <label for="capex_input" class="form-label">Investment Cost (EUR/kW):</label>
       <input type="number" step="0.01" class="form-control" name = "capex_input" min="0"
-             value="650" placeholder="e.g. 650" id="capex_input" required>
+             placeholder="e.g. 650" id="capex_input" required>
     </div>
 
     <div class="col-md-4">
       <label for="opex_input" class="form-label">Yearly Operational Cost (% of Investment Cost):</label>
       <input type="number" step="0.01" class="form-control" name = "opex_input" min="0"
-             value="2" placeholder="e.g. 2" id="opex_input" required>
+             placeholder="e.g. 2" id="opex_input" required>
     </div>
 
     <div class="col-8">
@@ -190,19 +190,19 @@ SPDX-License-Identifier: MIT
     <div class="col-md-5">
       <label for="wacc_input" class="form-label">Weighted Average Cost of Capital <br /> (WACC - in %): </label>
       <input type="number" step="0.01" class="form-control" name = "wacc_input" min="0" max="100"
-             value="7" placeholder="e.g. 7" id="wacc_input" required>
+             placeholder="e.g. 7" id="wacc_input" required>
     </div>
 
     <div class="col-md-6">
       <label for="runtime" class="form-label">Lifetime (Years):</label>
       <input type="number" class="form-control" name = "runtime" min="1" max="100"
-             value="25" placeholder="e.g. 25" id="runtime" required>
+             placeholder="e.g. 25" id="runtime" required>
     </div>
 
     <div class="col-9">
       <label for="power_price_change" class="form-label">Adjustment of Power Cost Time Series (in %):</label>
       <input type="number" step="0.01" class="form-control" name = "power_price_change" min="-500" max="500"
-             placeholder="0, if Default-Power-Cost should not be changed" value="0" id="power_price_change" required>
+             placeholder="0, if Default-Power-Cost should not be changed" id="power_price_change" required>
     </div>
 
     <div class="col-9">
@@ -230,17 +230,6 @@ SPDX-License-Identifier: MIT
         </select>
     </div>
 
-    <div class="col-md-6">
-      <label
-          for="storage_time_days"
-          class="form-label"
-          title="If no Infrastructure, but a Storage is needed, select a Storage time in days. Otherwise input 0"
-      >
-          Add Storage Time in Days:
-      </label>
-      <input type="number" step="0.1" class="form-control" name = "storage_time_days" min="0" max="100" value="0"
-             placeholder="e.g. 7" id="storage_time_days" required>
-    </div>
 
 
     <div class="col-9">
@@ -260,26 +249,27 @@ SPDX-License-Identifier: MIT
     </div>
 
     <div class="col-md-6">
-      <label for="min_storage_dimension" class="form-label" title="If not needed input 0">Minimum Energy Storage Demand (kWh):</label>
-      <input type="number" step="0.1" class="form-control" name = "min_storage_dimension" min="0" max="500000000" value="0"
-             placeholder="e.g. 2000" id="min_storage_dimension" required>
+      <label for="min_storage_dimension" class="form-label" title="If not needed input 0">Minimum Energy Storage Demand
+          (kWh - 0 for Default):  <br /> Can also be set, if only Storage and no Transport is needed.</label>
+      <input type="number" step="0.1" class="form-control" name = "min_storage_dimension" min="0" max="500000000"
+             value="0" placeholder="e.g. 2000" id="min_storage_dimension" required>
     </div>
 
     <hr>
         <h4>Consideration of Regulatory Impact</h4>
     <br>
     <div class="col-md-10">
-      <label> The tool considers the regulatory costs and possible subsidies in Germany (as of 2021). The user can set
+      <label> The tool considers the regulatory costs and possible subsidies in Germany (as of 2022). The user can set
           own values to calculate the planned business case regarding the desired technology.
           This enables the analysis of different regulatory conditions and the impact on the business model.<br>
         <br>
         The following default values for regulatory costs and subsidies exist:<br>
         <ul>
-          <li>EEG-levy: 6.5 ct/kWh according to the  Renewable Energy Act (EEG)</li>
-          <li>Power Tax: 2.05 ct/kWh according to the Power Tax Act</li>
-          <li>KWKG-levy: 2.26 EUR/MWh according to the Combined Heat and Power Act (KWKG)</li>
-          <li>CAPEX-subsidy: 0% of total Investment Cost</li>
-          <li>OPEX-subsidy: 0% of yearly Operational Cost (Maintenance and Operations)</li>
+          <li>EEG: 15% of the full Renewable Energy Law (EEG)</li>
+          <li>Power Tax: 10% of the full power taxes in Germany</li>
+          <li>KWKG: 0% of the full Combined Heat and Power Law (KWKG)</li>
+          <li>CAPEX-subsidy: 0% of total CAPEX</li>
+          <li>OPEX-subsidy: 0% of total OPEX (Maintenance and Operations)</li>
         </ul>
       </label><br>
     </div>
