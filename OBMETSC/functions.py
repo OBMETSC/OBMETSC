@@ -320,45 +320,6 @@ def LCOH2(runtime, wacc, plant_production, dcf_expenditure_technology, dcf_expen
 
     return Levelized_cost
 
-def LCOH2(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
-                   variable_cost, product_price, input_technology, power_input, capex_power, opex_power,
-                   efficiency, margincost_model, location, wacc, price_change, regulations_grid_expenditure,
-                   EEG_expenditure, capex_decrease, opex_decrease,
-                   share_input_wind, share_input_pv):
-
-    #get the production profile of the plant
-    plant_production = output_power_to_x(power_technology, input_technology, efficiency, product_price,
-                      margincost_model, variable_cost, location, power_input,
-                      power_price_series, price_change,
-                      share_input_wind, share_input_pv)
-
-    #get the discounted cash flow of the plant
-    power_to_x_dcf = dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost,
-                                    power_price_series, variable_cost, product_price, input_technology, power_input,
-                                    capex_power, opex_power, efficiency, margincost_model, location, wacc,
-                                    price_change, regulations_grid_expenditure, EEG_expenditure, capex_decrease,
-                                    opex_decrease, share_input_wind, share_input_pv)
-
-    #calculate the annuity factor for given runtime and wacc
-    annuity_factor = (((1+wacc)**runtime)-1) / (((1+wacc)**runtime)*wacc)
-
-    #access only the cost columns of the dcf dataframe
-    cost_df = power_to_x_dcf[0]
-    cost_df.drop(cost_df.columns[[5,6,7]], axis=1, inplace=True)
-
-    #calculate the investment cost and discoutned annual cost based on the reduces dcf dataframe
-    total_investment = cost_df.loc[0].sum()
-    annual_cost = cost_df.loc[1].sum() * annuity_factor
-    total_discounted_cost = (total_investment + annual_cost) * -1
-
-    #calculate the discounted production based on the plant productin profile
-    x_production = plant_production["production"]
-    discounted_production =  x_production.sum() * annuity_factor
-
-    #claculate the levelised cost
-    Levelized_cost = total_discounted_cost / discounted_production
-
-    return(Levelized_cost)
 
 # Function calculates the profitability (NPV and cash flows over runtime) for the designed Power-to-X plant
 def dcf_power_to_x(power_technology, capex_technology, opex_technology, runtime, power_cost, power_price_series,
