@@ -111,9 +111,6 @@ def get():
     do_infrastructure = str(request.form['do_infrastructure'])
     min_storage_dimension_kwh = float(request.form[
                                           'min_storage_dimension'])  # mit Anmerkung: If Infrastructure is includes, give a Minimum Storeage Dimension. Put 0 for no min. Storage need.
-    storage_time_days = float(request.form[
-                                  'storage_time_days'])  # If no infrastrukture is included, but a H2-Storage tank should be calculated, put a minimum stotage time in days
-
     # changes the input date in the needed form for calculation (e.g.: 5% --> 0.05)
     wacc = (wacc_input / 100)  # turning the input wacc (e.g. 5%) into decimal number (e.g. 0.05)
     price_change = 1 + power_price_change / 100  # turning input price_change (e.g. 5%) into decimal number (e.g. 1.05)
@@ -127,7 +124,6 @@ def get():
     share_input_wind = float(share_input_wind / 100)
     share_input_pv = float(share_input_pv / 100)
     min_storage_dimension_kg = min_storage_dimension_kwh / 33.3
-    storage_time_hour = storage_time_days * 24
     power_technology = float(power_technology / 1000)
     power_input = float(power_input/1000)
 
@@ -224,12 +220,15 @@ def get():
     dcf_expenditure_conversion = h[0]["expenditure_conversion"]
     dcf_expenditure_storage = h[0]["expenditure_storage"]
     dcf_expenditure_energy_demand = h[0]["expenditure_energy_demand"]
+    dcf_expenditure_driver_and_fuel = h[0]["expenditure_driver_and_fuel"]
     sens_infra = sensitivity_Infra(do_infrastructure, infrastructure_type, runtime, wacc, power_cost, distance, g)
 
-    LCOT = LCOI(runtime, wacc, sum_ptx, dcf_expenditure_transport, dcf_expenditure_conversion, dcf_expenditure_storage,
+    LCOT = LCOI(runtime, wacc, sum_ptx, dcf_expenditure_transport, dcf_expenditure_driver_and_fuel,
+                dcf_expenditure_conversion, dcf_expenditure_storage,
                 dcf_expenditure_energy_demand)
 
-    sens_lcoi = sensitivity_LCOI(runtime, wacc, sum_ptx, dcf_expenditure_transport, dcf_expenditure_conversion,
+    sens_lcoi = sensitivity_LCOI(runtime, wacc, sum_ptx, dcf_expenditure_transport, dcf_expenditure_driver_and_fuel,
+                                 dcf_expenditure_conversion,
                                  dcf_expenditure_storage, dcf_expenditure_energy_demand)
 
     # a graphic is created from the power production profile
@@ -246,7 +245,8 @@ def get():
     return render_template('output.html', runtime=runtime, npv_ptx=d[1], amount_production=sum_ptx, max_ptx=max_ptx,
                            column_names1=d[0].columns.values, row_data1=list(d[0].values.tolist()),
                            Levelised_Cost=round(LCOX, 2), Levelized_cost_infra=round(LCOT, 2),
-                           o2_production=o2_production, sum_ptx_200=sum_ptx_200,
+                           o2_production=o2_production, sum_ptx_200=sum_ptx_200, efficiency=efficiency,
+                           power_input=power_input,
                            sum_power_production=sum_power_production, power_technology=power_technology,
                            sum_power=sum_power, storage_dimension=round(storage_dimension_m3, 2), renewables=renewables, ptx_technology=ptx_technology,
                            column_names2=h[0].columns.values, row_data2=list(h[0].values.tolist()),

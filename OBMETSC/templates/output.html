@@ -30,7 +30,7 @@
     <p class="fw-bold">The Levelised Cost of Production is: {{'{0:,}'.format(Levelised_Cost)}} EUR / MWh</p>
     <p class="fw-bold">The Total Amount of yearly X-Production is: {{'{0:,}'.format(amount_production | int)}} MWh </p>
     <p class="fw-bold">The Total Amount of yearly RE-Power Production is: {{'{0:,}'.format(sum_power_production | int)}} MWh </p>
-    <p class="fw-bold">The Total Amount of Full Load Hours of RE-Plant is: {{'{0:,}'.format(((sum_power_production)/(power_input)) | int)}} h </p>
+    <p class="fw-bold">The Total Amount of Full Load Hours of RE-Plant is: {{'{0:,}'.format(((sum_power_production)/(power_input+0.00001)) | int)}} h </p>
     <p class="fw-bold">The Total Amount of Power Demand is: {{'{0:,}'.format(sum_power | int)}} MWh </p>
     <p class="fw-bold">The Total Amount of yearly O2-Production is: {{'{0:,}'.format(o2_production | int)}} kg (with 8 kgO2/kgH2) </p>
     <p style="padding-bottom: 30px; width: 300px;">
