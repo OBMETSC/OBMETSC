@@ -22,7 +22,6 @@ def get_price_series(power_price_series):
 
 heat_cost_data = pd.read_csv("databank/Heat_Kosten_2020.csv")
 
-# EINHEITEN:kWh ?
 # various .csv-data for the production capacity per kW for power production (PV, Wind) for various German states
 brandenburg_solar_data = pd.read_csv("databank/NINJA_PV_Brandenburg.csv")
 berlin_solar_data = pd.read_csv("databank/NINJA_PV_Berlin.csv")
