@@ -28,13 +28,19 @@
     </table>
     <p class="fw-bold">The Net Present Value is: {{'{0:,}'.format(npv_ptx | int)}} EUR </p>
     <p class="fw-bold">The Levelised Cost of Production is: {{'{0:,}'.format(Levelised_Cost)}} EUR / MWh</p>
-    <p class="fw-bold">The Total Amount of yearly Production is: {{'{0:,}'.format(amount_production | int)}} MWh </p>
+    <p class="fw-bold">The Total Amount of yearly X-Production is: {{'{0:,}'.format(amount_production | int)}} MWh </p>
+    <p class="fw-bold">The Total Amount of yearly RE-Power Production is: {{'{0:,}'.format(sum_power_production | int)}} MWh </p>
+    <p class="fw-bold">The Total Amount of Full Load Hours of RE-Plant is: {{'{0:,}'.format(((sum_power_production)/(power_input+0.00001)) | int)}} h </p>
     <p class="fw-bold">The Total Amount of Power Demand is: {{'{0:,}'.format(sum_power | int)}} MWh </p>
-    <p class="fw-bold">The Maximum Amount of hourly Production is: {{'{0:,}'.format(max_ptx | int)}} kWh </p>
+    <p class="fw-bold">The Total Amount of yearly O2-Production is: {{'{0:,}'.format(o2_production | int)}} kg (with 8 kgO2/kgH2) </p>
     <p style="padding-bottom: 30px; width: 300px;">
     <hr>
+    <div class="content">
+    <label class="form-label">Sensitivity for X-Production:</label><br>
+    <img src='/static/sensitivity_plot.png'/>
+    <img src='/static/sensitivity_lcox_plot.png'/>
+    </div>
     <h4>Production Profiles of the Plant:</h4><br>
-
     <div class="content">
     {% if renewables %}
     <label class="form-label">Production Profile for Renewable Power Production:</label><br>
@@ -44,7 +50,6 @@
     <p style="padding-bottom: 30px; width: 300px;">
 
     <div class="content">
-    <!--{% if infrastructure %}-->
     <hr>
     <h4>Infrastructure Expenses:</h4><br>
     <label class="form-label">Expected expenses on infrastructure over the duration of {{runtime}} years</label>
@@ -67,11 +72,15 @@
             </tbody>
     </table>
     <p class="fw-bold">The Net Present Value is: {{'{0:,}'.format(npv_infrastructure | int)}} EUR</p>
-   <!--{% endif %}-->
+    <p class="fw-bold">The Levelised Cost of Infrastructure is: {{'{0:,}'.format( Levelized_cost_infra)}} EUR / MWh</p>
+    <p class="fw-bold">The Storage Capacity is: {{'{0:,}'.format(storage_dimension)}} m3 </p>
+    <hr>
+    <div class="content">
+    <label class="form-label">Sensitivity for Infrastructure:</label><br>
+    <img src='/static/sensitivity_lcoi_plot.png'/>
+    <img src='/static/sensitivity_infra_plot.png'/>
     </div>
-    <img src='/static/sensitivity_plot.png'/>
-
 </div>
 <p style="padding-bottom: 30px; width: 300px;">
-
 {% endblock %}
+
